@@ -1,0 +1,396 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* CIP Light — Pakistani green undertone (from HTML design) */
+    --background: 138 14% 97%;
+    --foreground: 150 33% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 150 33% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 150 33% 9%;
+    --primary: 152 69% 37%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 138 14% 94%;
+    --secondary-foreground: 150 33% 9%;
+    --muted: 138 14% 94%;
+    --muted-foreground: 150 12% 35%;
+    --accent: 138 14% 94%;
+    --accent-foreground: 150 33% 9%;
+    --destructive: 350 89% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 138 14% 85%;
+    --input: 138 14% 85%;
+    --ring: 152 69% 37%;
+    --radius: 0.625rem;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+
+    /* Semantic */
+    --success: 152 69% 37%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+    --danger: 350 89% 60%;
+    --danger-foreground: 0 0% 100%;
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
+    --purple-accent: 262 83% 58%;
+    --purple-accent-foreground: 0 0% 100%;
+  }
+
+  .dark {
+    /* CIP Dark — deep navy with blue accent (from HTML dashboard design) */
+    --background: 220 47% 3%;
+    --foreground: 220 27% 94%;
+    --card: 222 37% 8%;
+    --card-foreground: 220 27% 94%;
+    --popover: 222 37% 8%;
+    --popover-foreground: 220 27% 94%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 30% 12%;
+    --secondary-foreground: 220 27% 94%;
+    --muted: 222 30% 12%;
+    --muted-foreground: 215 16% 57%;
+    --accent: 222 30% 12%;
+    --accent-foreground: 220 27% 94%;
+    --destructive: 350 89% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 24% 16%;
+    --input: 222 24% 16%;
+    --ring: 217 91% 60%;
+  }
+}
+
+@layer base {
+  html {
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+  }
+  * {
+    @apply border-border;
+  }
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    @apply bg-background text-foreground antialiased;
+  }
+
+  /* Custom scrollbar matching HTML design */
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+}
+
+/* Dashboard-specific overrides matching HTML design */
+@layer components {
+  /* Sidebar active item left bar indicator */
+  .nav-active-bar {
+    @apply relative;
+  }
+  .nav-active-bar::before {
+    content: '';
+    @apply absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] rounded-r-sm bg-primary;
+  }
+
+  /* Card hover lift effect matching HTML design */
+  .card-hover {
+    @apply transition-all duration-200;
+  }
+  .card-hover:hover {
+    @apply border-border/80;
+    transform: translateY(-1px);
+  }
+
+  /* Stat card styling matching HTML design */
+  .stat-card {
+    @apply relative overflow-hidden transition-all duration-150;
+  }
+  .stat-card:hover {
+    @apply border-border/80;
+    transform: translateY(-1px);
+  }
+
+  /* Data table matching HTML design */
+  .dt-header {
+    @apply text-[0.65rem] font-semibold uppercase tracking-wider;
+  }
+  .dt-cell {
+    @apply text-[0.78rem];
+  }
+
+  /* Badge colors matching HTML design */
+  .badge-green {
+    background: rgba(34, 197, 94, 0.12);
+    color: #4ade80;
+  }
+  .badge-red {
+    background: rgba(244, 63, 94, 0.12);
+    color: #fb7185;
+  }
+  .badge-yellow {
+    background: rgba(245, 158, 11, 0.1);
+    color: #fbbf24;
+  }
+  .badge-blue {
+    background: rgba(59, 130, 246, 0.12);
+    color: #60a5fa;
+  }
+  .badge-purple {
+    background: rgba(167, 139, 250, 0.12);
+    color: #a78bfa;
+  }
+  .badge-teal {
+    background: rgba(45, 212, 168, 0.12);
+    color: #2dd4a8;
+  }
+
+  /* Monospace text */
+  .mono {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    @apply text-[0.7rem] text-muted-foreground;
+  }
+
+  /* Risk progress bar */
+  .risk-bar {
+    @apply h-1.5 rounded-full overflow-hidden;
+    background: hsl(var(--muted));
+  }
+  .risk-bar-fill {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+
+  /* Form input focus matching HTML design */
+  .fi-focus:focus {
+    @apply outline-none ring-2 ring-primary/20 border-primary;
+  }
+
+  /* Pakistani green stripe at top — matches cip-public-pages.html */
+  .pk-stripe {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent 5%, #01411c 20%, #00a651 50%, #01411c 80%, transparent 95%);
+    z-index: 60;
+  }
+
+  /* Form input green focus — matches HTML .fi:focus */
+  .fi-green:focus,
+  input.fi-green:focus {
+    outline: none !important;
+    border-color: #00a651 !important;
+    box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.1) !important;
+    --tw-ring-color: transparent !important;
+  }
+  .dark .fi-green:focus,
+  .dark input.fi-green:focus {
+    border-color: #00a651 !important;
+    box-shadow: 0 0 0 3px rgba(0, 166, 81, 0.15) !important;
+  }
+
+  /* Card/wizard green top line — matches HTML .lc::before, .wc::before */
+  .card-green-top {
+    position: relative;
+  }
+  .card-green-top::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #00a651, transparent);
+    border-radius: 1px;
+  }
+
+  /* Ambient floating orbs */
+  .ambient {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    animation: drift 20s ease-in-out infinite;
+  }
+  .orb-1 {
+    width: 500px;
+    height: 500px;
+    background: rgba(0, 166, 81, 0.06);
+    top: -200px;
+    left: -100px;
+  }
+  .orb-2 {
+    width: 400px;
+    height: 400px;
+    background: rgba(59, 130, 246, 0.03);
+    bottom: -150px;
+    right: -100px;
+    animation-delay: -7s;
+  }
+  .orb-3 {
+    width: 300px;
+    height: 300px;
+    background: rgba(0, 166, 81, 0.06);
+    top: 40%;
+    right: -50px;
+    animation-delay: -13s;
+  }
+
+  @keyframes drift {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(40px, -25px) scale(1.06); }
+    66% { transform: translate(-25px, 35px) scale(0.94); }
+  }
+
+  /* Floating particles — home page */
+  .particles {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0;
+    animation: float-up linear infinite;
+  }
+  @keyframes float-up {
+    0% { transform: translateY(100vh) scale(0); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+  }
+
+  /* Animated gradient border — all cards (light: green, dark: blue, very subtle) */
+  @keyframes border-shimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  /* Light theme — light green */
+  .card-animated::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: linear-gradient(90deg, transparent, rgba(0,166,81,.08), rgba(0,166,81,.18), rgba(0,166,81,.08), transparent);
+    background-size: 300% 100%;
+    z-index: -1;
+    opacity: 0;
+    animation: border-shimmer 2s ease infinite;
+    transition: opacity 0.3s;
+  }
+  .dark .card-animated::before {
+    background: linear-gradient(90deg, transparent, rgba(59,130,246,.08), rgba(59,130,246,.18), rgba(59,130,246,.08), transparent);
+  }
+  .card-animated:hover::before {
+    opacity: 0.3;
+  }
+  .card-animated::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0,166,81,.35), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .dark .card-animated::after {
+    background: linear-gradient(90deg, transparent, rgba(59,130,246,.35), transparent);
+  }
+  .card-animated:hover::after {
+    opacity: 0.3;
+  }
+  .card-animated {
+    @apply relative overflow-hidden cursor-pointer transition-all duration-300;
+  }
+  .card-animated:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 166, 81, 0.22);
+  }
+  .dark .card-animated:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    border-color: rgba(59, 130, 246, 0.28);
+  }
+
+  /* Scroll reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Fade-up animation for dashboard elements */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .anim { animation: fadeUp 0.35s ease forwards; }
+  .anim-d1 { animation-delay: 0.03s; }
+  .anim-d2 { animation-delay: 0.06s; }
+  .anim-d3 { animation-delay: 0.09s; }
+  .anim-d4 { animation-delay: 0.12s; }
+
+  /* Feature card hover effects for public pages (light: green, dark: blue, very subtle) */
+  .fc {
+    @apply relative overflow-hidden;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .fc:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  }
+  .dark .fc:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+  .fc::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0,166,81,.35), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .dark .fc::after {
+    background: linear-gradient(90deg, transparent, rgba(59,130,246,.35), transparent);
+  }
+  .fc:hover::after {
+    opacity: 0.3;
+  }
+
+  /* Button shine on hover */
+  @keyframes btn-shine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+}
