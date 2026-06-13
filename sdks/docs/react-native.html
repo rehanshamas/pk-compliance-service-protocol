@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>React Native SDK Integration - CIP Docs</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0A0A0C; --bg-card: #111114; --bg-code: #141416; --bg-sidebar: #0D0D10;
+    --text: #F5F5F5; --text-muted: #9CA3AF; --accent: #F28A17; --accent-dim: rgba(242,138,23,0.15);
+    --border: #1E1E24; --green: #00A651; --red: #EF4444; --radius: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.7; font-size: 15px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { opacity: 0.85; text-decoration: underline; }
+  .page { display: flex; min-height: 100vh; }
+  .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; background: var(--bg-sidebar); border-right: 1px solid var(--border); padding: 24px 0; overflow-y: auto; z-index: 100; }
+  .sidebar-logo { padding: 0 24px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .sidebar-logo h2 { font-size: 18px; font-weight: 800; }
+  .sidebar-logo h2 span { color: var(--accent); }
+  .sidebar-logo p { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .sidebar nav { padding: 0 12px; }
+  .sidebar nav a { display: block; padding: 8px 12px; border-radius: 8px; font-size: 13px; color: var(--text-muted); transition: all 0.15s; margin-bottom: 2px; }
+  .sidebar nav a:hover, .sidebar nav a.active { background: var(--accent-dim); color: var(--accent); text-decoration: none; }
+  .sidebar nav .nav-section { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 16px 12px 6px; font-weight: 700; }
+  .main { margin-left: 260px; flex: 1; }
+  .content { max-width: 900px; padding: 48px; }
+  .content h1 { font-size: 34px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+  .content h1 span { color: var(--accent); }
+  .content .subtitle { font-size: 16px; color: var(--text-muted); margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+  .content h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; margin-top: 48px; }
+  .content h2:first-of-type { margin-top: 0; }
+  .content h3 { font-size: 17px; font-weight: 700; margin-top: 28px; margin-bottom: 8px; }
+  .content h4 { font-size: 14px; font-weight: 700; margin-top: 20px; margin-bottom: 6px; color: var(--accent); }
+  .content p { color: var(--text-muted); margin-bottom: 16px; }
+  .content ul, .content ol { color: var(--text-muted); padding-left: 24px; margin-bottom: 16px; }
+  .content li { margin-bottom: 6px; }
+  .content li strong { color: var(--text); }
+  .content code { font-family: var(--font-mono); background: var(--bg-code); padding: 2px 7px; border-radius: 4px; font-size: 13px; color: var(--accent); }
+  .code-block { position: relative; margin: 16px 0 24px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+  .code-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: #1a1a1e; border-bottom: 1px solid var(--border); }
+  .code-lang { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
+  .copy-btn { background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: all 0.15s; font-family: var(--font); }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .code-block pre { background: var(--bg-code); padding: 16px; overflow-x: auto; margin: 0; }
+  .code-block pre code { background: none; padding: 0; font-size: 13px; line-height: 1.6; color: var(--text-muted); }
+  .code-block pre code .kw { color: #C678DD; }
+  .code-block pre code .str { color: #98C379; }
+  .code-block pre code .cm { color: #5C6370; font-style: italic; }
+  .code-block pre code .fn { color: #61AFEF; }
+  .code-block pre code .num { color: #D19A66; }
+  .code-block pre code .key { color: #E06C75; }
+  .info-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin: 20px 0; }
+  .info-box.tip { border-left: 3px solid var(--green); }
+  .info-box.warning { border-left: 3px solid #EAB308; }
+  .info-box.danger { border-left: 3px solid var(--red); }
+  .info-box h4 { margin-top: 0; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .info-box.tip h4 { color: var(--green); }
+  .info-box.warning h4 { color: #EAB308; }
+  .info-box.danger h4 { color: var(--red); }
+  .info-box p, .info-box ul { font-size: 13px; margin-bottom: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+  th { text-align: left; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border); font-weight: 700; color: var(--text); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 10px 14px; border: 1px solid var(--border); color: var(--text-muted); vertical-align: top; }
+  td code { font-size: 12px; }
+  tr:hover td { background: rgba(242,138,23,0.03); }
+  .footer { border-top: 1px solid var(--border); padding: 32px 48px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); }
+  .footer-brand { font-weight: 700; color: var(--text); }
+  .footer-brand span { color: var(--accent); }
+  .platform-tabs { display: flex; gap: 0; margin: 16px 0 0; border-bottom: 1px solid var(--border); }
+  .platform-tab { padding: 8px 20px; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; }
+  .platform-tab:hover { color: var(--text); }
+  .platform-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .platform-content { display: none; }
+  .platform-content.active { display: block; }
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .content { padding: 24px; }
+    .footer { flex-direction: column; gap: 8px; padding: 24px; }
+    table { display: block; overflow-x: auto; }
+  }
+  .mobile-nav { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 200; background: var(--bg-sidebar); border-bottom: 1px solid var(--border); padding: 12px 16px; }
+  .mobile-nav button { background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; }
+  @media (max-width: 768px) {
+    .mobile-nav { display: flex; justify-content: space-between; align-items: center; }
+    .mobile-nav .brand { font-size: 15px; font-weight: 800; }
+    .mobile-nav .brand span { color: var(--accent); }
+    .sidebar.open { display: block; z-index: 300; width: 100%; }
+    .content { padding-top: 72px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mobile-nav">
+  <div class="brand">CIP <span>Docs</span></div>
+  <button onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+</div>
+
+<div class="page">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h2>CIP <span>Docs</span></h2>
+      <p>Integration Guide v1.0</p>
+    </div>
+    <nav>
+      <div class="nav-section">Getting Started</div>
+      <a href="index.html">Overview</a>
+
+      <div class="nav-section">Integration Methods</div>
+      <a href="webview.html">WebView / Redirect</a>
+      <a href="web-sdk.html">Web SDK</a>
+      <a href="react-native.html" class="active">React Native SDK</a>
+
+      <div class="nav-section">This Page</div>
+      <a href="#installation">Installation</a>
+      <a href="#expo-setup">Expo Setup</a>
+      <a href="#quick-start">Quick Start</a>
+      <a href="#props">Props Reference</a>
+      <a href="#branding">Branding</a>
+      <a href="#events">Events / Callbacks</a>
+      <a href="#step-by-step">Step-by-Step</a>
+      <a href="#platform-notes">Platform Notes</a>
+      <a href="#exchange-integration">Exchange Integration</a>
+      <a href="#troubleshooting">Troubleshooting</a>
+
+      <div class="nav-section">Reference</div>
+      <a href="api-reference.html">API Reference</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="content">
+      <h1>React Native <span>SDK</span> Integration</h1>
+      <p class="subtitle">Native KYC in your React Native / Expo app. Camera capture, liveness detection, and document verification built in.</p>
+
+      <!-- Installation -->
+      <h2 id="installation">Installation</h2>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">npm</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>npm install @cip/kyc-react-native</code></pre>
+      </div>
+
+      <h3>Peer Dependencies</h3>
+      <p>The SDK requires <code>expo-camera</code> for camera access:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm"># If using Expo</span>
+npx expo install expo-camera
+
+<span class="cm"># If using bare React Native</span>
+npm install expo-camera
+npx pod-install <span class="cm"># iOS only</span></code></pre>
+      </div>
+
+      <!-- Expo Setup -->
+      <h2 id="expo-setup">Expo Setup</h2>
+      <p>Add the camera plugin to your <code>app.json</code> / <code>app.config.js</code>:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JSON (app.json)</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>{
+  "<span class="key">expo</span>": {
+    "<span class="key">plugins</span>": [
+      [
+        <span class="str">"expo-camera"</span>,
+        {
+          "<span class="key">cameraPermission</span>": <span class="str">"CIP needs camera access to verify your identity."</span>
+        }
+      ]
+    ]
+  }
+}</code></pre>
+      </div>
+
+      <div class="info-box tip">
+        <h4>Expo Go Limitation</h4>
+        <p>Camera capture works in Expo Go for development. For production, use a development build (<code>npx expo prebuild</code>) or EAS Build.</p>
+      </div>
+
+      <!-- Quick Start -->
+      <h2 id="quick-start">Quick Start</h2>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">TypeScript (JSX)</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="kw">import</span> { CipKyc } <span class="kw">from</span> <span class="str">'@cip/kyc-react-native'</span>;
+
+<span class="kw">export function</span> <span class="fn">KycScreen</span>() {
+  <span class="kw">return</span> (
+    &lt;<span class="fn">CipKyc</span>
+      apiKey=<span class="str">"cip_live_your_api_key"</span>
+      sessionId=<span class="str">"session-id-from-your-backend"</span>
+      onComplete={(result) =&gt; {
+        console.<span class="fn">log</span>(<span class="str">'KYC result:'</span>, result.status);
+        navigation.<span class="fn">goBack</span>();
+      }}
+      onError={(err) =&gt; console.<span class="fn">error</span>(err)}
+      onCancel={() =&gt; navigation.<span class="fn">goBack</span>()}
+    /&gt;
+  );
+}</code></pre>
+      </div>
+
+      <p>The <code>&lt;CipKyc /&gt;</code> component takes over the entire screen and manages the verification flow, camera permissions, step progression, and result display.</p>
+
+      <!-- Props Reference -->
+      <h2 id="props">Full Props Reference</h2>
+      <p>Every property of <code>CipKycProps</code>:</p>
+
+      <table>
+        <tr><th>Prop</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        <tr><td><code>apiKey</code></td><td><code>string</code></td><td><em>required</em></td><td>API key issued by CIP for your VASP.</td></tr>
+        <tr><td><code>sessionId</code></td><td><code>string</code></td><td><em>required</em></td><td>KYC session ID from your backend.</td></tr>
+        <tr><td><code>apiBaseUrl</code></td><td><code>string</code></td><td><code>'https://api.cip.app'</code></td><td>CIP backend base URL.</td></tr>
+        <tr><td><code>verificationLevel</code></td><td><code>'basic' | 'advanced'</code></td><td><code>'basic'</code></td><td>Verification level. Server value takes precedence.</td></tr>
+        <tr><td><code>branding</code></td><td><code>CipBranding</code></td><td>CIP defaults</td><td>Visual branding overrides.</td></tr>
+        <tr><td><code>locale</code></td><td><code>string</code></td><td><code>'en'</code></td><td>Locale code.</td></tr>
+        <tr><td><code>strings</code></td><td><code>Record&lt;string, string&gt;</code></td><td><code>{}</code></td><td>Custom string overrides.</td></tr>
+        <tr><td><code>onComplete</code></td><td><code>(result: CipKycResult) =&gt; void</code></td><td>&mdash;</td><td>Fired when verification completes.</td></tr>
+        <tr><td><code>onStepComplete</code></td><td><code>(step: string, data: any) =&gt; void</code></td><td>&mdash;</td><td>Fired after each step completes.</td></tr>
+        <tr><td><code>onError</code></td><td><code>(error: CipKycError) =&gt; void</code></td><td>&mdash;</td><td>Fired on error.</td></tr>
+        <tr><td><code>onCancel</code></td><td><code>() =&gt; void</code></td><td>&mdash;</td><td>Fired when user cancels.</td></tr>
+      </table>
+
+      <!-- Branding -->
+      <h2 id="branding">Branding</h2>
+      <p>The React Native SDK supports the same branding options as the Web SDK, with RN-specific differences:</p>
+
+      <table>
+        <tr><th>Property</th><th>Type</th><th>Default</th><th>Notes</th></tr>
+        <tr><td><code>primaryColor</code></td><td><code>string</code></td><td><code>'#F28A17'</code></td><td>Hex color string</td></tr>
+        <tr><td><code>backgroundColor</code></td><td><code>string</code></td><td><code>'#0A0A0C'</code></td><td>Hex color string</td></tr>
+        <tr><td><code>textColor</code></td><td><code>string</code></td><td><code>'#F5F5F5'</code></td><td>Hex color string</td></tr>
+        <tr><td><code>logo</code></td><td><code>string</code></td><td><code>''</code></td><td>URL to logo image</td></tr>
+        <tr><td><code>companyName</code></td><td><code>string</code></td><td><code>'CIP'</code></td><td>Shown in header</td></tr>
+        <tr><td><code>fontFamily</code></td><td><code>string</code></td><td><code>'System'</code></td><td>Uses system font by default. Pass a custom font name if loaded.</td></tr>
+        <tr><td><code>borderRadius</code></td><td><code>number</code></td><td><code>12</code></td><td><strong>Number</strong> (not string) &mdash; React Native uses numeric border radius.</td></tr>
+      </table>
+
+      <div class="info-box warning">
+        <h4>RN-specific: borderRadius is a number</h4>
+        <p>Unlike the Web SDK which takes a CSS string (<code>'12px'</code>), the React Native SDK takes a plain number (<code>12</code>). Also, <code>fontFamily</code> defaults to <code>'System'</code> (React Native system font) instead of a CSS font stack.</p>
+      </div>
+
+      <h3>Branding Example</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">TypeScript (JSX)</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>&lt;<span class="fn">CipKyc</span>
+  apiKey=<span class="str">"cip_live_..."</span>
+  sessionId={sessionId}
+  branding={{
+    primaryColor: <span class="str">'#10B981'</span>,
+    backgroundColor: <span class="str">'#111827'</span>,
+    textColor: <span class="str">'#F9FAFB'</span>,
+    logo: <span class="str">'https://yourapp.com/logo.png'</span>,
+    companyName: <span class="str">'YourExchange'</span>,
+    borderRadius: <span class="num">8</span>,  <span class="cm">// number, not string</span>
+  }}
+  onComplete={handleComplete}
+/&gt;</code></pre>
+      </div>
+
+      <!-- Events -->
+      <h2 id="events">Events / Callbacks</h2>
+
+      <h3><code>onComplete(result: CipKycResult)</code></h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">TypeScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm">// CipKycResult shape (identical to Web SDK)</span>
+{
+  sessionId: <span class="str">"a1b2c3d4-..."</span>,
+  status: <span class="str">"approved"</span> | <span class="str">"rejected"</span> | <span class="str">"pending"</span>,
+  kycStatus: <span class="str">"approved"</span>,
+  riskTier: <span class="str">"low"</span>,
+  customerId: <span class="str">"cust-..."</span> | <span class="kw">null</span>,
+  data: {
+    fullName?: <span class="str">"Ahmed Khan"</span>,
+    cnicNumber?: <span class="str">"42101-1234567-8"</span>,
+    dateOfBirth?: <span class="str">"1995-03-15"</span>,
+    gender?: <span class="str">"male"</span>,
+    address?: <span class="str">"House 12, Street 5, Islamabad"</span>,
+    faceMatchScore?: <span class="num">0.97</span>,
+    livenessScore?: <span class="num">0.99</span>,
+  }
+}</code></pre>
+      </div>
+
+      <h3><code>onStepComplete(step: string, data: any)</code></h3>
+      <p>Step names: <code>document_front</code>, <code>document_back</code>, <code>selfie</code>, <code>liveness</code>, <code>document_in_hand</code></p>
+
+      <h3><code>onError(error: CipKycError)</code></h3>
+      <p>Error codes: <code>CAMERA_DENIED</code>, <code>CAMERA_UNAVAILABLE</code>, <code>NETWORK_ERROR</code>, <code>SESSION_EXPIRED</code>, <code>UNKNOWN_ERROR</code></p>
+
+      <h3><code>onCancel()</code></h3>
+      <p>Triggered after the user confirms cancellation via the native Alert dialog. Use this to navigate back in your app.</p>
+
+      <!-- Step by step -->
+      <h2 id="step-by-step">Step-by-Step Integration</h2>
+
+      <h3>1. Install and configure permissions</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>npm install @cip/kyc-react-native
+npx expo install expo-camera</code></pre>
+      </div>
+
+      <h3>2. Create a session on your backend</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">TypeScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm">// api.ts - Call YOUR backend which calls CIP</span>
+<span class="kw">export async function</span> <span class="fn">createKycSession</span>(): Promise&lt;string&gt; {
+  <span class="kw">const</span> res = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'https://yourapi.com/kyc/create-session'</span>, {
+    method: <span class="str">'POST'</span>,
+    headers: { <span class="str">'Authorization'</span>: <span class="str">`Bearer ${userToken}`</span> },
+  });
+  <span class="kw">const</span> { sessionId } = <span class="kw">await</span> res.<span class="fn">json</span>();
+  <span class="kw">return</span> sessionId;
+}</code></pre>
+      </div>
+
+      <h3>3. Render the CipKyc component</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">TypeScript (JSX)</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="kw">import</span> React, { useState, useEffect } <span class="kw">from</span> <span class="str">'react'</span>;
+<span class="kw">import</span> { View, ActivityIndicator } <span class="kw">from</span> <span class="str">'react-native'</span>;
+<span class="kw">import</span> { CipKyc } <span class="kw">from</span> <span class="str">'@cip/kyc-react-native'</span>;
+<span class="kw">import</span> { createKycSession } <span class="kw">from</span> <span class="str">'./api'</span>;
+
+<span class="kw">export function</span> <span class="fn">KycScreen</span>({ navigation }) {
+  <span class="kw">const</span> [sessionId, setSessionId] = <span class="fn">useState</span>&lt;string | <span class="kw">null</span>&gt;(<span class="kw">null</span>);
+
+  <span class="fn">useEffect</span>(() =&gt; {
+    <span class="fn">createKycSession</span>().<span class="fn">then</span>(setSessionId);
+  }, []);
+
+  <span class="kw">if</span> (!sessionId) {
+    <span class="kw">return</span> (
+      &lt;View style={{ flex: <span class="num">1</span>, justifyContent: <span class="str">'center'</span>, alignItems: <span class="str">'center'</span> }}&gt;
+        &lt;ActivityIndicator size=<span class="str">"large"</span> color=<span class="str">"#F28A17"</span> /&gt;
+      &lt;/View&gt;
+    );
+  }
+
+  <span class="kw">return</span> (
+    &lt;<span class="fn">CipKyc</span>
+      apiKey=<span class="str">"cip_live_your_api_key"</span>
+      sessionId={sessionId}
+      onComplete={(result) =&gt; {
+        console.<span class="fn">log</span>(<span class="str">'KYC done:'</span>, result.status);
+        <span class="kw">if</span> (result.status === <span class="str">'approved'</span>) {
+          navigation.<span class="fn">replace</span>(<span class="str">'Dashboard'</span>);
+        } <span class="kw">else</span> {
+          navigation.<span class="fn">replace</span>(<span class="str">'KycResult'</span>, { status: result.status });
+        }
+      }}
+      onError={(err) =&gt; {
+        console.<span class="fn">error</span>(<span class="str">'KYC error:'</span>, err);
+      }}
+      onCancel={() =&gt; navigation.<span class="fn">goBack</span>()}
+    /&gt;
+  );
+}</code></pre>
+      </div>
+
+      <h3>4. Handle completion</h3>
+      <p>Navigate the user based on the result. Always verify the result server-side from your backend.</p>
+
+      <!-- Platform Notes -->
+      <h2 id="platform-notes">Platform-Specific Notes</h2>
+
+      <div class="platform-tabs">
+        <div class="platform-tab active" onclick="switchTab(this, 'ios')">iOS</div>
+        <div class="platform-tab" onclick="switchTab(this, 'android')">Android</div>
+        <div class="platform-tab" onclick="switchTab(this, 'expo')">Expo</div>
+      </div>
+
+      <div id="tab-ios" class="platform-content active">
+        <h3>iOS: Info.plist Camera Permission</h3>
+        <p>Add the camera usage description to your <code>ios/YourApp/Info.plist</code>:</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">XML (Info.plist)</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>&lt;key&gt;NSCameraUsageDescription&lt;/key&gt;
+&lt;string&gt;CIP needs camera access to verify your identity through document capture and selfie.&lt;/string&gt;</code></pre>
+        </div>
+        <div class="info-box tip">
+          <h4>iOS Notes</h4>
+          <ul>
+            <li>Camera permission prompt appears automatically when the SDK starts</li>
+            <li>If the user denies, the SDK shows a permission request screen with a button</li>
+            <li>Minimum iOS version: 13.0</li>
+            <li>Works with both Face ID and Touch ID devices</li>
+          </ul>
+        </div>
+      </div>
+
+      <div id="tab-android" class="platform-content">
+        <h3>Android: AndroidManifest Camera Permission</h3>
+        <p>Add to <code>android/app/src/main/AndroidManifest.xml</code>:</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">XML (AndroidManifest.xml)</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>&lt;uses-permission android:name=<span class="str">"android.permission.CAMERA"</span> /&gt;
+&lt;uses-feature android:name=<span class="str">"android.hardware.camera"</span> android:required=<span class="str">"false"</span> /&gt;
+&lt;uses-feature android:name=<span class="str">"android.hardware.camera.front"</span> android:required=<span class="str">"false"</span> /&gt;</code></pre>
+        </div>
+        <div class="info-box tip">
+          <h4>Android Notes</h4>
+          <ul>
+            <li>Minimum SDK version: 21 (Android 5.0)</li>
+            <li>Runtime permission is handled by <code>expo-camera</code></li>
+            <li>Works on both physical devices and emulators (with virtual camera)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div id="tab-expo" class="platform-content">
+        <h3>Expo: app.json Camera Plugin</h3>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JSON (app.json)</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>{
+  "<span class="key">expo</span>": {
+    "<span class="key">plugins</span>": [
+      [
+        <span class="str">"expo-camera"</span>,
+        {
+          "<span class="key">cameraPermission</span>": <span class="str">"We need your camera to verify your identity."</span>
+        }
+      ]
+    ],
+    "<span class="key">ios</span>": {
+      "<span class="key">infoPlist</span>": {
+        "<span class="key">NSCameraUsageDescription</span>": <span class="str">"CIP needs camera access to verify your identity."</span>
+      }
+    },
+    "<span class="key">android</span>": {
+      "<span class="key">permissions</span>": [<span class="str">"CAMERA"</span>]
+    }
+  }
+}</code></pre>
+        </div>
+        <div class="info-box tip">
+          <h4>Expo Notes</h4>
+          <ul>
+            <li>Works with Expo SDK 49+ and expo-camera 14+</li>
+            <li>Use <code>npx expo prebuild</code> for a development build if Expo Go has issues</li>
+            <li>EAS Build handles permissions automatically</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Exchange Integration -->
+      <h2 id="exchange-integration">Exchange Integration Example</h2>
+      <p>Here is how a VASP exchange app (like Paiso) integrates the CIP KYC SDK into its onboarding flow:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">TypeScript (JSX) - Exchange App</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="kw">import</span> React, { useState, useCallback } <span class="kw">from</span> <span class="str">'react'</span>;
+<span class="kw">import</span> { View, Text, TouchableOpacity, StyleSheet } <span class="kw">from</span> <span class="str">'react-native'</span>;
+<span class="kw">import</span> { CipKyc, CipKycResult } <span class="kw">from</span> <span class="str">'@cip/kyc-react-native'</span>;
+<span class="kw">import</span> { useAuth } <span class="kw">from</span> <span class="str">'./hooks/useAuth'</span>;
+
+<span class="kw">type</span> Screen = <span class="str">'prompt'</span> | <span class="str">'kyc'</span> | <span class="str">'done'</span>;
+
+<span class="kw">export function</span> <span class="fn">OnboardingKycScreen</span>({ navigation }) {
+  <span class="kw">const</span> { user, refreshUser } = <span class="fn">useAuth</span>();
+  <span class="kw">const</span> [screen, setScreen] = <span class="fn">useState</span>&lt;Screen&gt;(<span class="str">'prompt'</span>);
+  <span class="kw">const</span> [sessionId, setSessionId] = <span class="fn">useState</span>&lt;string | <span class="kw">null</span>&gt;(<span class="kw">null</span>);
+
+  <span class="kw">const</span> <span class="fn">startKyc</span> = <span class="fn">useCallback</span>(<span class="kw">async</span> () =&gt; {
+    <span class="cm">// Your exchange backend creates a CIP session</span>
+    <span class="kw">const</span> res = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'https://api.yourexchange.com/kyc/session'</span>, {
+      method: <span class="str">'POST'</span>,
+      headers: {
+        <span class="str">'Authorization'</span>: <span class="str">`Bearer ${user.token}`</span>,
+        <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span>,
+      },
+    });
+    <span class="kw">const</span> { sessionId } = <span class="kw">await</span> res.<span class="fn">json</span>();
+    <span class="fn">setSessionId</span>(sessionId);
+    <span class="fn">setScreen</span>(<span class="str">'kyc'</span>);
+  }, [user]);
+
+  <span class="kw">const</span> <span class="fn">handleComplete</span> = <span class="fn">useCallback</span>((result: CipKycResult) =&gt; {
+    <span class="kw">if</span> (result.status === <span class="str">'approved'</span>) {
+      <span class="fn">refreshUser</span>(); <span class="cm">// Refresh user profile with new KYC status</span>
+      navigation.<span class="fn">replace</span>(<span class="str">'Home'</span>);
+    } <span class="kw">else</span> {
+      <span class="fn">setScreen</span>(<span class="str">'done'</span>);
+    }
+  }, [navigation, refreshUser]);
+
+  <span class="kw">if</span> (screen === <span class="str">'kyc'</span> &amp;&amp; sessionId) {
+    <span class="kw">return</span> (
+      &lt;<span class="fn">CipKyc</span>
+        apiKey={process.env.EXPO_PUBLIC_CIP_API_KEY}
+        sessionId={sessionId}
+        branding={{
+          primaryColor: <span class="str">'#F28A17'</span>,  <span class="cm">// Match your exchange theme</span>
+          companyName: <span class="str">'YourExchange'</span>,
+          borderRadius: <span class="num">12</span>,
+        }}
+        onComplete={handleComplete}
+        onError={(err) =&gt; console.<span class="fn">error</span>(err)}
+        onCancel={() =&gt; <span class="fn">setScreen</span>(<span class="str">'prompt'</span>)}
+      /&gt;
+    );
+  }
+
+  <span class="cm">// Prompt screen or done screen...</span>
+  <span class="kw">return</span> (
+    &lt;View style={styles.container}&gt;
+      &lt;Text style={styles.title}&gt;
+        {screen === <span class="str">'done'</span> ? <span class="str">'Verification Submitted'</span> : <span class="str">'Verify Your Identity'</span>}
+      &lt;/Text&gt;
+      &lt;Text style={styles.subtitle}&gt;
+        {screen === <span class="str">'done'</span>
+          ? <span class="str">'We are reviewing your documents. This usually takes a few minutes.'</span>
+          : <span class="str">'Complete KYC to unlock trading and withdrawals.'</span>}
+      &lt;/Text&gt;
+      {screen === <span class="str">'prompt'</span> &amp;&amp; (
+        &lt;TouchableOpacity style={styles.button} onPress={startKyc}&gt;
+          &lt;Text style={styles.buttonText}&gt;Start Verification&lt;/Text&gt;
+        &lt;/TouchableOpacity&gt;
+      )}
+    &lt;/View&gt;
+  );
+}</code></pre>
+      </div>
+
+      <!-- Troubleshooting -->
+      <h2 id="troubleshooting">Troubleshooting</h2>
+
+      <h3>Camera not working</h3>
+      <ul>
+        <li>Ensure <code>expo-camera</code> is installed and the Expo config plugin is added</li>
+        <li>On physical devices: check Settings &gt; Privacy &gt; Camera for permission</li>
+        <li>On simulators: camera may not be available. Use a physical device for testing.</li>
+        <li>Run <code>npx expo prebuild --clean</code> if permissions are not being applied</li>
+      </ul>
+
+      <h3>expo-camera version mismatch</h3>
+      <div class="info-box danger">
+        <h4>Common Error: expo-camera version incompatible</h4>
+        <p>If you see version mismatch errors, ensure you install expo-camera using <code>npx expo install expo-camera</code> (not <code>npm install</code>). This ensures the correct version for your Expo SDK.</p>
+      </div>
+
+      <h3>"Cannot find module" errors</h3>
+      <ul>
+        <li>Clear Metro bundler cache: <code>npx expo start --clear</code></li>
+        <li>Delete <code>node_modules</code> and reinstall: <code>rm -rf node_modules && npm install</code></li>
+        <li>For bare RN: run <code>npx pod-install</code> after installing</li>
+      </ul>
+
+      <h3>Permission denied on Android</h3>
+      <ul>
+        <li>Ensure <code>CAMERA</code> permission is in <code>AndroidManifest.xml</code></li>
+        <li>On Android 13+, camera permission requires runtime request (handled by expo-camera)</li>
+        <li>Check the user has not permanently denied camera. If so, redirect to app settings.</li>
+      </ul>
+
+      <h3>Blank screen on component mount</h3>
+      <ul>
+        <li>Verify <code>apiKey</code> and <code>sessionId</code> are not empty strings</li>
+        <li>Check network connectivity to the CIP API</li>
+        <li>Look at the React Native console for error messages</li>
+        <li>Ensure the session has not expired (30-minute timeout)</li>
+      </ul>
+
+    </div>
+
+    <footer class="footer">
+      <div><span class="footer-brand">CIP <span>Compliance Infrastructure Platform</span></span></div>
+      <div>Built for Pakistan's Virtual Assets Act 2026</div>
+    </footer>
+  </div>
+</div>
+
+<script>
+function copyCode(btn) {
+  const code = btn.closest('.code-block').querySelector('code');
+  navigator.clipboard.writeText(code.textContent).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.style.color = '#00A651';
+    btn.style.borderColor = '#00A651';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 2000);
+  });
+}
+
+function switchTab(el, tabId) {
+  document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.platform-content').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-' + tabId).classList.add('active');
+}
+</script>
+
+</body>
+</html>

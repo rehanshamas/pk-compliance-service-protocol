@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Reference - CIP Docs</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0A0A0C; --bg-card: #111114; --bg-code: #141416; --bg-sidebar: #0D0D10;
+    --text: #F5F5F5; --text-muted: #9CA3AF; --accent: #F28A17; --accent-dim: rgba(242,138,23,0.15);
+    --border: #1E1E24; --green: #00A651; --red: #EF4444; --radius: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.7; font-size: 15px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { opacity: 0.85; text-decoration: underline; }
+  .page { display: flex; min-height: 100vh; }
+  .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; background: var(--bg-sidebar); border-right: 1px solid var(--border); padding: 24px 0; overflow-y: auto; z-index: 100; }
+  .sidebar-logo { padding: 0 24px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .sidebar-logo h2 { font-size: 18px; font-weight: 800; }
+  .sidebar-logo h2 span { color: var(--accent); }
+  .sidebar-logo p { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .sidebar nav { padding: 0 12px; }
+  .sidebar nav a { display: block; padding: 6px 12px; border-radius: 8px; font-size: 12.5px; color: var(--text-muted); transition: all 0.15s; margin-bottom: 1px; }
+  .sidebar nav a:hover, .sidebar nav a.active { background: var(--accent-dim); color: var(--accent); text-decoration: none; }
+  .sidebar nav .nav-section { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 14px 12px 4px; font-weight: 700; }
+  .main { margin-left: 280px; flex: 1; }
+  .content { max-width: 960px; padding: 48px; }
+  .content h1 { font-size: 34px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+  .content h1 span { color: var(--accent); }
+  .content .subtitle { font-size: 16px; color: var(--text-muted); margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+  .content h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--border); }
+  .content h2:first-of-type { margin-top: 0; padding-top: 0; border-top: none; }
+  .content h3 { font-size: 17px; font-weight: 700; margin-top: 32px; margin-bottom: 8px; }
+  .content h4 { font-size: 14px; font-weight: 700; margin-top: 20px; margin-bottom: 6px; color: var(--accent); }
+  .content p { color: var(--text-muted); margin-bottom: 16px; }
+  .content ul, .content ol { color: var(--text-muted); padding-left: 24px; margin-bottom: 16px; }
+  .content li { margin-bottom: 6px; }
+  .content li strong { color: var(--text); }
+  .content code { font-family: var(--font-mono); background: var(--bg-code); padding: 2px 7px; border-radius: 4px; font-size: 13px; color: var(--accent); }
+  .code-block { position: relative; margin: 16px 0 24px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+  .code-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: #1a1a1e; border-bottom: 1px solid var(--border); }
+  .code-lang { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
+  .copy-btn { background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: all 0.15s; font-family: var(--font); }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .code-block pre { background: var(--bg-code); padding: 16px; overflow-x: auto; margin: 0; }
+  .code-block pre code { background: none; padding: 0; font-size: 13px; line-height: 1.6; color: var(--text-muted); }
+  .code-block pre code .kw { color: #C678DD; }
+  .code-block pre code .str { color: #98C379; }
+  .code-block pre code .cm { color: #5C6370; font-style: italic; }
+  .code-block pre code .fn { color: #61AFEF; }
+  .code-block pre code .num { color: #D19A66; }
+  .code-block pre code .key { color: #E06C75; }
+  .info-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin: 20px 0; }
+  .info-box.tip { border-left: 3px solid var(--green); }
+  .info-box.warning { border-left: 3px solid #EAB308; }
+  .info-box p, .info-box ul { font-size: 13px; margin-bottom: 0; }
+  .info-box h4 { margin-top: 0; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .info-box.tip h4 { color: var(--green); }
+  .info-box.warning h4 { color: #EAB308; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+  th { text-align: left; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border); font-weight: 700; color: var(--text); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 10px 14px; border: 1px solid var(--border); color: var(--text-muted); vertical-align: top; }
+  td code { font-size: 12px; }
+  tr:hover td { background: rgba(242,138,23,0.03); }
+
+  /* Endpoint header */
+  .endpoint { margin-top: 32px; }
+  .endpoint-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .method { display: inline-block; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 800; font-family: var(--font-mono); letter-spacing: 0.5px; }
+  .method-get { background: rgba(59,130,246,0.15); color: #60A5FA; }
+  .method-post { background: rgba(34,197,94,0.15); color: #4ADE80; }
+  .method-patch { background: rgba(234,179,8,0.15); color: #FACC15; }
+  .method-delete { background: rgba(239,68,68,0.15); color: #F87171; }
+  .endpoint-path { font-family: var(--font-mono); font-size: 14px; font-weight: 600; color: var(--text); }
+  .endpoint-auth { font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+  .auth-jwt { background: rgba(168,85,247,0.15); color: #C084FC; }
+  .auth-public { background: rgba(34,197,94,0.15); color: #4ADE80; }
+
+  .footer { border-top: 1px solid var(--border); padding: 32px 48px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); }
+  .footer-brand { font-weight: 700; color: var(--text); }
+  .footer-brand span { color: var(--accent); }
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .content { padding: 24px; }
+    .footer { flex-direction: column; gap: 8px; padding: 24px; }
+    table { display: block; overflow-x: auto; }
+    .endpoint-header { flex-direction: column; align-items: flex-start; gap: 6px; }
+  }
+  .mobile-nav { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 200; background: var(--bg-sidebar); border-bottom: 1px solid var(--border); padding: 12px 16px; }
+  .mobile-nav button { background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; }
+  @media (max-width: 768px) {
+    .mobile-nav { display: flex; justify-content: space-between; align-items: center; }
+    .mobile-nav .brand { font-size: 15px; font-weight: 800; }
+    .mobile-nav .brand span { color: var(--accent); }
+    .sidebar.open { display: block; z-index: 300; width: 100%; }
+    .content { padding-top: 72px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mobile-nav">
+  <div class="brand">CIP <span>Docs</span></div>
+  <button onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+</div>
+
+<div class="page">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h2>CIP <span>Docs</span></h2>
+      <p>API Reference v1.0</p>
+    </div>
+    <nav>
+      <div class="nav-section">Guides</div>
+      <a href="index.html">Overview</a>
+      <a href="webview.html">WebView / Redirect</a>
+      <a href="web-sdk.html">Web SDK</a>
+      <a href="react-native.html">React Native SDK</a>
+
+      <div class="nav-section">Authentication</div>
+      <a href="#authentication">Auth Overview</a>
+
+      <div class="nav-section">KYC Sessions</div>
+      <a href="#create-session">POST Create Session</a>
+      <a href="#get-session">GET Session Status</a>
+      <a href="#verify-session">GET Verify (Public)</a>
+      <a href="#process-frame">POST Process Frame</a>
+      <a href="#process-liveness">POST Process Liveness</a>
+      <a href="#upload-document">POST Upload Document</a>
+      <a href="#complete-step">POST Complete Step</a>
+
+      <div class="nav-section">Customers</div>
+      <a href="#create-customer">POST Create Customer</a>
+      <a href="#get-customer-ref">GET Customer by Ref</a>
+      <a href="#get-customer">GET Customer by ID</a>
+
+      <div class="nav-section">Wallets</div>
+      <a href="#register-wallet">POST Register Wallet</a>
+      <a href="#score-wallet">POST Score Wallet</a>
+
+      <div class="nav-section">Screening</div>
+      <a href="#screening-check">POST Screening Check</a>
+
+      <div class="nav-section">Webhooks</div>
+      <a href="#webhook-config">PATCH Webhook Config</a>
+      <a href="#webhook-test">POST Test Webhook</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="content">
+      <h1>API <span>Reference</span></h1>
+      <p class="subtitle">Complete REST API documentation for the CIP Compliance Infrastructure Platform.</p>
+
+      <!-- Authentication -->
+      <h2 id="authentication">Authentication</h2>
+
+      <p>CIP uses two authentication methods:</p>
+
+      <h3>JWT Bearer Token (Authenticated Endpoints)</h3>
+      <p>For VASP backend-to-CIP communication. Obtain a JWT by authenticating with the CIP auth endpoint using your credentials.</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTTP Header</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...</code></pre>
+      </div>
+
+      <h3>API Key (SDK Endpoints)</h3>
+      <p>For SDK-to-CIP communication. The SDK sends your API key with each request.</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTTP Header</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>X-API-Key: cip_live_your_api_key_here</code></pre>
+      </div>
+
+      <h3>Session-Based (Public Endpoints)</h3>
+      <p>Public endpoints like <code>/verify</code>, <code>/process-frame</code>, and <code>/complete-step</code> use the session ID itself as authentication. These are called by the hosted verification page and SDKs.</p>
+
+      <div class="info-box tip">
+        <h4>Base URL</h4>
+        <p>All endpoints are relative to: <code>https://api.cip.pk/api/v1</code><br>Sandbox: <code>https://sandbox.api.cip.pk/api/v1</code></p>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- KYC Sessions -->
+      <!-- ================================================================= -->
+
+      <h2 id="sessions">KYC Sessions</h2>
+
+      <!-- Create Session -->
+      <div class="endpoint" id="create-session">
+        <div class="endpoint-header">
+          <span class="method method-post">POST</span>
+          <span class="endpoint-path">/kyc-sessions</span>
+          <span class="endpoint-auth auth-jwt">JWT Required</span>
+        </div>
+        <p>Create a new KYC verification session. Returns session ID and redirect URLs for the hosted verification page.</p>
+
+        <h4>Request Body</h4>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+          <tr><td><code>external_ref</code></td><td>string (max 255)</td><td>No</td><td>Your internal user/customer ID</td></tr>
+          <tr><td><code>customer_name</code></td><td>string (max 255)</td><td>No</td><td>Pre-fill customer name</td></tr>
+          <tr><td><code>customer_cnic</code></td><td>string (max 20)</td><td>No</td><td>CNIC number for NADRA verification</td></tr>
+          <tr><td><code>customer_phone</code></td><td>string (max 20)</td><td>No</td><td>Phone number</td></tr>
+          <tr><td><code>customer_dob</code></td><td>string (max 10)</td><td>No</td><td>Date of birth (YYYY-MM-DD)</td></tr>
+          <tr><td><code>customer_nationality</code></td><td>string (max 100)</td><td>No</td><td>Nationality</td></tr>
+          <tr><td><code>web_callback_url</code></td><td>string (max 1024)</td><td>No</td><td>Browser redirect URL after completion</td></tr>
+          <tr><td><code>mobile_callback_url</code></td><td>string (max 1024)</td><td>No</td><td>Mobile deep link callback</td></tr>
+        </table>
+
+        <h4>Response (201 Created)</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JSON</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>{
+  "<span class="key">session_id</span>": <span class="str">"a1b2c3d4-e5f6-7890-abcd-ef1234567890"</span>,
+  "<span class="key">status</span>": <span class="str">"pending"</span>,
+  "<span class="key">current_step</span>": <span class="str">"upload"</span>,
+  "<span class="key">kyc_status</span>": <span class="kw">null</span>,
+  "<span class="key">risk_tier</span>": <span class="kw">null</span>,
+  "<span class="key">customer_id</span>": <span class="kw">null</span>,
+  "<span class="key">liveness_required</span>": <span class="kw">false</span>,
+  "<span class="key">web_url</span>": <span class="str">"https://app.cip.pk/verify/a1b2c3d4-..."</span>,
+  "<span class="key">mobile_url</span>": <span class="str">"cip://verify/a1b2c3d4-..."</span>,
+  "<span class="key">expires_at</span>": <span class="str">"2026-03-31T15:30:00Z"</span>,
+  "<span class="key">completed_at</span>": <span class="kw">null</span>,
+  "<span class="key">created_at</span>": <span class="str">"2026-03-31T15:00:00Z"</span>
+}</code></pre>
+        </div>
+
+        <h4>Try it</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">cURL</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>curl -X POST https://api.cip.pk/api/v1/kyc-sessions \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "external_ref": "user-12345",
+    "customer_name": "Ahmed Khan",
+    "customer_cnic": "42101-1234567-8",
+    "web_callback_url": "https://yourapp.com/kyc/callback"
+  }'</code></pre>
+        </div>
+      </div>
+
+      <!-- Get Session Status -->
+      <div class="endpoint" id="get-session">
+        <div class="endpoint-header">
+          <span class="method method-get">GET</span>
+          <span class="endpoint-path">/kyc-sessions/{session_id}</span>
+          <span class="endpoint-auth auth-jwt">JWT Required</span>
+        </div>
+        <p>Check the current status of a KYC session. Tenant-isolated: you can only access sessions belonging to your tenant.</p>
+
+        <h4>Path Parameters</h4>
+        <table>
+          <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+          <tr><td><code>session_id</code></td><td>UUID</td><td>KYC session ID</td></tr>
+        </table>
+
+        <h4>Response (200 OK)</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JSON</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>{
+  "<span class="key">session_id</span>": <span class="str">"a1b2c3d4-e5f6-7890-abcd-ef1234567890"</span>,
+  "<span class="key">status</span>": <span class="str">"completed"</span>,
+  "<span class="key">current_step</span>": <span class="str">"complete"</span>,
+  "<span class="key">kyc_status</span>": <span class="str">"approved"</span>,
+  "<span class="key">risk_tier</span>": <span class="str">"low"</span>,
+  "<span class="key">customer_id</span>": <span class="str">"cust-9876-fedc-ba09"</span>,
+  "<span class="key">completed_at</span>": <span class="str">"2026-03-31T15:05:32Z"</span>
+}</code></pre>
+        </div>
+
+        <h4>Try it</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">cURL</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>curl https://api.cip.pk/api/v1/kyc-sessions/SESSION_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"</code></pre>
+        </div>
+      </div>
+
+      <!-- Verify Session (Public) -->
+      <div class="endpoint" id="verify-session">
+        <div class="endpoint-header">
+          <span class="method method-get">GET</span>
+          <span class="endpoint-path">/kyc-sessions/{session_id}/verify</span>
+          <span class="endpoint-auth auth-public">Public</span>
+        </div>
+        <p>Public endpoint used by the hosted verification page and SDKs. Session ID acts as the authentication token.</p>
+
+        <h4>Response (200 OK)</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JSON</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>{
+  "<span class="key">session_id</span>": <span class="str">"a1b2c3d4-..."</span>,
+  "<span class="key">status</span>": <span class="str">"pending"</span>,
+  "<span class="key">current_step</span>": <span class="str">"upload"</span>,
+  "<span class="key">liveness_required</span>": <span class="kw">true</span>,
+  "<span class="key">customer_name</span>": <span class="str">"Ahmed Khan"</span>,
+  "<span class="key">expires_at</span>": <span class="str">"2026-03-31T15:30:00Z"</span>,
+  "<span class="key">completed_at</span>": <span class="kw">null</span>,
+  "<span class="key">kyc_status</span>": <span class="kw">null</span>,
+  "<span class="key">risk_tier</span>": <span class="kw">null</span>,
+  "<span class="key">web_callback_url</span>": <span class="str">"https://yourapp.com/kyc/callback"</span>,
+  "<span class="key">mobile_callback_url</span>": <span class="str">"yourapp://kyc/callback"</span>
+}</code></pre>
+        </div>
+
+        <h4>Try it</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">cURL</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>curl https://api.cip.pk/api/v1/kyc-sessions/SESSION_ID/verify</code></pre>
+        </div>
+      </div>
+
+      <!-- Process Frame -->
+      <div class="endpoint" id="process-frame">
+        <div class="endpoint-header">
+          <span class="method method-post">POST</span>
+          <span class="endpoint-path">/kyc-sessions/{session_id}/process-frame</span>
+          <span class="endpoint-auth auth-public">Public</span>
+        </div>
+        <p>Process a single verification frame through the ML engine. Called by the hosted page or SDK when the user captures a photo. Returns OCR data, face match score, quality assessment, and pass/fail.</p>
+
+        <h4>Request (multipart/form-data)</h4>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+          <tr><td><code>step</code></td><td>string</td><td>Yes</td><td>One of: <code>document_front</code>, <code>document_back</code>, <code>selfie</code>, <code>liveness</code>, <code>document_in_hand</code></td></tr>
+          <tr><td><code>file</code></td><td>binary</td><td>Yes</td><td>Image file (JPEG/PNG, max 10MB)</td></tr>
+        </table>
+
+        <h4>Response (200 OK)</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JSON</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>{
+  "<span class="key">step</span>": <span class="str">"document_front"</span>,
+  "<span class="key">passed</span>": <span class="kw">true</span>,
+  "<span class="key">data</span>": {
+    "<span class="key">ocrName</span>": <span class="str">"AHMED KHAN"</span>,
+    "<span class="key">ocrCnic</span>": <span class="str">"42101-1234567-8"</span>,
+    "<span class="key">ocrDob</span>": <span class="str">"1995-03-15"</span>,
+    "<span class="key">ocrGender</span>": <span class="str">"M"</span>
+  },
+  "<span class="key">errors</span>": [],
+  "<span class="key">quality</span>": {
+    "<span class="key">score</span>": <span class="num">0.95</span>,
+    "<span class="key">issues</span>": []
+  },
+  "<span class="key">sessionStatus</span>": <span class="str">"in_progress"</span>,
+  "<span class="key">nextStep</span>": <span class="str">"document_back"</span>,
+  "<span class="key">isComplete</span>": <span class="kw">false</span>
+}</code></pre>
+        </div>
+
+        <h4>Try it</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">cURL</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>curl -X POST https://api.cip.pk/api/v1/kyc-sessions/SESSION_ID/process-frame \
+  -F "step=document_front" \
+  -F "file=@/path/to/cnic-front.jpg"</code></pre>
+        </div>
+      </div>
+
+      <!-- Process Liveness -->
+      <div class="endpoint" id="process-liveness">
+        <div class="endpoint-header">
+          <span class="method method-post">POST</span>
+          <span class="endpoint-path">/kyc-sessions/{session_id}/process-liveness</span>
+          <span class="endpoint-auth auth-public">Public</span>
+        </div>
+        <p>Process multiple liveness frames (blink + head turn sequence). Send 5-10 frames captured during the liveness challenge.</p>
+
+        <h4>Request (multipart/form-data)</h4>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+          <tr><td><code>files</code></td><td>binary[]</td><td>Yes</td><td>3-20 image frames (each max 5MB)</td></tr>
+        </table>
+
+        <h4>Response (200 OK)</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JSON</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>{
+  "<span class="key">step</span>": <span class="str">"liveness"</span>,
+  "<span class="key">passed</span>": <span class="kw">true</span>,
+  "<span class="key">data</span>": {
+    "<span class="key">livenessScore</span>": <span class="num">0.99</span>,
+    "<span class="key">blinkDetected</span>": <span class="kw">true</span>,
+    "<span class="key">headTurnDetected</span>": <span class="kw">true</span>
+  },
+  "<span class="key">errors</span>": [],
+  "<span class="key">quality</span>": { "<span class="key">score</span>": <span class="num">0.97</span>, "<span class="key">issues</span>": [] },
+  "<span class="key">sessionStatus</span>": <span class="str">"in_progress"</span>,
+  "<span class="key">nextStep</span>": <span class="str">"document_in_hand"</span>,
+  "<span class="key">isComplete</span>": <span class="kw">false</span>
+}</code></pre>
+        </div>
+
+        <h4>Try it</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">cURL</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>curl -X POST https://api.cip.pk/api/v1/kyc-sessions/SESSION_ID/process-liveness \
+  -F "files=@frame1.jpg" \
+  -F "files=@frame2.jpg" \
+  -F "files=@frame3.jpg" \
+  -F "files=@frame4.jpg" \
+  -F "files=@frame5.jpg"</code></pre>
+        </div>
+      </div>
+
+      <!-- Upload Document -->
+      <div class="endpoint" id="upload-document">
+        <div class="endpoint-header">
+          <span class="method method-post">POST</span>
+          <span class="endpoint-path">/kyc-sessions/{session_id}/upload-document</span>
+          <span class="endpoint-auth auth-public">Public</span>
+        </div>
+        <p>Upload a document for a KYC session. Used for manual document uploads (as opposed to camera capture via process-frame).</p>
+
+        <h4>Request (multipart/form-data)</h4>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+          <tr><td><code>document_type</code></td><td>string</td><td>Yes</td><td>One of: <code>cnic</code>, <code>passport</code>, <code>driving_license</code>, <code>selfie</code></td></tr>
+          <tr><td><code>file</code></td><td>binary</td><td>Yes</td><td>Image or PDF (JPEG/PNG/PDF, max 10MB)</td></tr>
+        </table>
+
+        <h4>Response (200 OK)</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JSON</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>{
+  "<span class="key">status</span>": <span class="str">"success"</span>,
+  "<span class="key">data</span>": {
+    "<span class="key">document_id</span>": <span class="str">"doc-123-456"</span>,
+    "<span class="key">document_type</span>": <span class="str">"cnic"</span>,
+    "<span class="key">ocr_data</span>": { ... }
+  }
+}</code></pre>
+        </div>
+
+        <h4>Try it</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">cURL</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>curl -X POST https://api.cip.pk/api/v1/kyc-sessions/SESSION_ID/upload-document \
+  -F "document_type=cnic" \
+  -F "file=@/path/to/cnic.jpg"</code></pre>
+        </div>
+      </div>
+
+      <!-- Complete Step -->
+      <div class="endpoint" id="complete-step">
+        <div class="endpoint-header">
+          <span class="method method-post">POST</span>
+          <span class="endpoint-path">/kyc-sessions/{session_id}/complete-step</span>
+          <span class="endpoint-auth auth-public">Public</span>
+        </div>
+        <p>Advance the KYC session to the next step. Called after a step has been successfully processed.</p>
+
+        <h4>Request Body</h4>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+          <tr><td><code>step</code></td><td>string</td><td>Yes</td><td>One of: <code>upload</code>, <code>verify</code>, <code>liveness</code>, <code>complete</code></td></tr>
+        </table>
+
+        <h4>Response (200 OK)</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JSON</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>{
+  "<span class="key">status</span>": <span class="str">"success"</span>,
+  "<span class="key">data</span>": {
+    "<span class="key">session_id</span>": <span class="str">"a1b2c3d4-..."</span>,
+    "<span class="key">status</span>": <span class="str">"in_progress"</span>,
+    "<span class="key">current_step</span>": <span class="str">"verify"</span>,
+    "<span class="key">kyc_status</span>": <span class="kw">null</span>,
+    "<span class="key">risk_tier</span>": <span class="kw">null</span>,
+    "<span class="key">completed_at</span>": <span class="kw">null</span>
+  }
+}</code></pre>
+        </div>
+
+        <h4>Try it</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">cURL</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>curl -X POST https://api.cip.pk/api/v1/kyc-sessions/SESSION_ID/complete-step \
+  -H "Content-Type: application/json" \
+  -d '{"step": "upload"}'</code></pre>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- Customers -->
+      <!-- ================================================================= -->
+
+      <h2 id="customers">Customers</h2>
+
+      <div class="endpoint" id="create-customer">
+        <div class="endpoint-header">
+          <span class="method method-post">POST</span>
+          <span class="endpoint-path">/customers</span>
+          <span class="endpoint-auth auth-jwt">JWT Required</span>
+        </div>
+        <p>Create a customer record directly (without going through the KYC session flow). Useful for importing existing verified customers.</p>
+
+        <h4>Request Body</h4>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+          <tr><td><code>external_ref</code></td><td>string</td><td>No</td><td>Your internal ID for this customer</td></tr>
+          <tr><td><code>full_name</code></td><td>string</td><td>Yes</td><td>Customer full name</td></tr>
+          <tr><td><code>cnic_number</code></td><td>string</td><td>No</td><td>CNIC number</td></tr>
+          <tr><td><code>phone</code></td><td>string</td><td>No</td><td>Phone number</td></tr>
+          <tr><td><code>dob</code></td><td>string</td><td>No</td><td>Date of birth (YYYY-MM-DD)</td></tr>
+          <tr><td><code>nationality</code></td><td>string</td><td>No</td><td>Nationality</td></tr>
+          <tr><td><code>business_purpose</code></td><td>string</td><td>No</td><td>Purpose of business relationship</td></tr>
+          <tr><td><code>expected_activity</code></td><td>string</td><td>No</td><td>Expected transaction activity level</td></tr>
+        </table>
+
+        <h4>Try it</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">cURL</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>curl -X POST https://api.cip.pk/api/v1/customers \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "external_ref": "user-12345",
+    "full_name": "Ahmed Khan",
+    "cnic_number": "42101-1234567-8",
+    "phone": "+923001234567",
+    "dob": "1995-03-15",
+    "nationality": "Pakistani"
+  }'</code></pre>
+        </div>
+      </div>
+
+      <div class="endpoint" id="get-customer-ref">
+        <div class="endpoint-header">
+          <span class="method method-get">GET</span>
+          <span class="endpoint-path">/customers/by-ref/{external_ref}</span>
+          <span class="endpoint-auth auth-jwt">JWT Required</span>
+        </div>
+        <p>Look up a customer by your external reference ID. Tenant-isolated.</p>
+
+        <h4>Try it</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">cURL</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>curl https://api.cip.pk/api/v1/customers/by-ref/user-12345 \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"</code></pre>
+        </div>
+      </div>
+
+      <div class="endpoint" id="get-customer">
+        <div class="endpoint-header">
+          <span class="method method-get">GET</span>
+          <span class="endpoint-path">/customers/{customer_id}</span>
+          <span class="endpoint-auth auth-jwt">JWT Required</span>
+        </div>
+        <p>Get customer details by CIP customer ID.</p>
+
+        <h4>Response (200 OK)</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JSON</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>{
+  "<span class="key">id</span>": <span class="str">"cust-9876-fedc-ba09"</span>,
+  "<span class="key">tenantId</span>": <span class="str">"tenant-1234-..."</span>,
+  "<span class="key">externalRef</span>": <span class="str">"user-12345"</span>,
+  "<span class="key">fullName</span>": <span class="str">"Ahmed Khan"</span>,
+  "<span class="key">cnicNumber</span>": <span class="str">"42101-1234567-8"</span>,
+  "<span class="key">phone</span>": <span class="str">"+923001234567"</span>,
+  "<span class="key">dob</span>": <span class="str">"1995-03-15"</span>,
+  "<span class="key">nationality</span>": <span class="str">"Pakistani"</span>,
+  "<span class="key">riskTier</span>": <span class="str">"low"</span>,
+  "<span class="key">kycStatus</span>": <span class="str">"approved"</span>,
+  "<span class="key">createdAt</span>": <span class="str">"2026-03-31T15:05:32Z"</span>,
+  "<span class="key">updatedAt</span>": <span class="str">"2026-03-31T15:05:32Z"</span>
+}</code></pre>
+        </div>
+
+        <h4>Try it</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">cURL</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>curl https://api.cip.pk/api/v1/customers/CUSTOMER_ID \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"</code></pre>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- Wallets -->
+      <!-- ================================================================= -->
+
+      <h2 id="wallets">Wallets</h2>
+
+      <div class="endpoint" id="register-wallet">
+        <div class="endpoint-header">
+          <span class="method method-post">POST</span>
+          <span class="endpoint-path">/wallets/register</span>
+          <span class="endpoint-auth auth-jwt">JWT Required</span>
+        </div>
+        <p>Register a wallet address for ongoing monitoring. CIP will periodically re-score and alert on risk changes.</p>
+
+        <h4>Request Body</h4>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+          <tr><td><code>address</code></td><td>string</td><td>Yes</td><td>Blockchain wallet address</td></tr>
+          <tr><td><code>chain</code></td><td>string</td><td>Yes</td><td>One of: <code>ethereum</code>, <code>bitcoin</code>, <code>bsc</code>, <code>polygon</code>, <code>tron</code></td></tr>
+          <tr><td><code>customer_id</code></td><td>UUID</td><td>No</td><td>Link to a CIP customer</td></tr>
+          <tr><td><code>external_ref</code></td><td>string</td><td>No</td><td>Your internal reference</td></tr>
+          <tr><td><code>label</code></td><td>string</td><td>No</td><td>Friendly label (e.g., "User deposit address")</td></tr>
+        </table>
+
+        <h4>Try it</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">cURL</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>curl -X POST https://api.cip.pk/api/v1/wallets/register \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "address": "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18",
+    "chain": "ethereum",
+    "label": "User deposit wallet"
+  }'</code></pre>
+        </div>
+      </div>
+
+      <div class="endpoint" id="score-wallet">
+        <div class="endpoint-header">
+          <span class="method method-post">POST</span>
+          <span class="endpoint-path">/wallets/score</span>
+          <span class="endpoint-auth auth-jwt">JWT Required</span>
+        </div>
+        <p>Score a wallet address. Returns risk category, score, and contributing factors.</p>
+
+        <h4>Request Body</h4>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+          <tr><td><code>address</code></td><td>string</td><td>Yes</td><td>Blockchain wallet address</td></tr>
+          <tr><td><code>chain</code></td><td>string</td><td>Yes</td><td>One of: <code>ethereum</code>, <code>bitcoin</code>, <code>bsc</code>, <code>polygon</code>, <code>tron</code></td></tr>
+          <tr><td><code>depth</code></td><td>string</td><td>No</td><td>Analysis depth: <code>shallow</code>, <code>standard</code>, <code>deep</code></td></tr>
+        </table>
+
+        <h4>Response (200 OK)</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JSON</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>{
+  "<span class="key">address</span>": <span class="str">"0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18"</span>,
+  "<span class="key">chain</span>": <span class="str">"ethereum"</span>,
+  "<span class="key">riskScore</span>": <span class="num">23</span>,
+  "<span class="key">riskCategory</span>": <span class="str">"low"</span>,
+  "<span class="key">factors</span>": [
+    { "<span class="key">name</span>": <span class="str">"mixer_exposure"</span>, "<span class="key">score</span>": <span class="num">0</span>, "<span class="key">detail</span>": <span class="str">"No mixer interactions detected"</span> },
+    { "<span class="key">name</span>": <span class="str">"sanctions_exposure"</span>, "<span class="key">score</span>": <span class="num">0</span>, "<span class="key">detail</span>": <span class="str">"No OFAC/sanctioned entity links"</span> }
+  ],
+  "<span class="key">scoredAt</span>": <span class="str">"2026-03-31T15:10:00Z"</span>
+}</code></pre>
+        </div>
+
+        <h4>Try it</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">cURL</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>curl -X POST https://api.cip.pk/api/v1/wallets/score \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "address": "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD18",
+    "chain": "ethereum"
+  }'</code></pre>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- Screening -->
+      <!-- ================================================================= -->
+
+      <h2 id="screening">Screening</h2>
+
+      <div class="endpoint" id="screening-check">
+        <div class="endpoint-header">
+          <span class="method method-post">POST</span>
+          <span class="endpoint-path">/screening/check</span>
+          <span class="endpoint-auth auth-jwt">JWT Required</span>
+        </div>
+        <p>Real-time name screening against sanctions lists (UN, OFAC, EU, NACTA, PEP). Returns matches above the configured threshold with fuzzy matching scores.</p>
+
+        <h4>Request Body</h4>
+        <table>
+          <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+          <tr><td><code>name</code></td><td>string</td><td>Yes</td><td>Name to screen</td></tr>
+          <tr><td><code>dob</code></td><td>string</td><td>No</td><td>Date of birth (YYYY-MM-DD) for disambiguation</td></tr>
+          <tr><td><code>id_number</code></td><td>string</td><td>No</td><td>National ID / passport number</td></tr>
+        </table>
+
+        <h4>Response (200 OK)</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JSON</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>{
+  "<span class="key">id</span>": <span class="str">"scr-abc123"</span>,
+  "<span class="key">screenedEntityName</span>": <span class="str">"Ahmed Khan"</span>,
+  "<span class="key">matches</span>": [
+    {
+      "<span class="key">watchlistEntryId</span>": <span class="str">"un-1234"</span>,
+      "<span class="key">score</span>": <span class="num">0.45</span>
+    }
+  ],
+  "<span class="key">overallStatus</span>": <span class="str">"clear"</span>,
+  "<span class="key">createdAt</span>": <span class="str">"2026-03-31T15:12:00Z"</span>
+}</code></pre>
+        </div>
+
+        <h4>Try it</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">cURL</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>curl -X POST https://api.cip.pk/api/v1/screening/check \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Ahmed Khan",
+    "dob": "1995-03-15"
+  }'</code></pre>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- Webhooks -->
+      <!-- ================================================================= -->
+
+      <h2 id="webhooks">Webhooks</h2>
+
+      <div class="endpoint" id="webhook-config">
+        <div class="endpoint-header">
+          <span class="method method-patch">PATCH</span>
+          <span class="endpoint-path">/tenants/me/settings/webhooks</span>
+          <span class="endpoint-auth auth-jwt">JWT Required</span>
+        </div>
+        <p>Update the webhook URL for your tenant. CIP sends event notifications to this URL.</p>
+
+        <h4>Request Body</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JSON</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>{
+  "<span class="key">webhook_url</span>": <span class="str">"https://yourapp.com/webhooks/cip"</span>
+}</code></pre>
+        </div>
+
+        <h4>Response (200 OK)</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JSON</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>{
+  "<span class="key">status</span>": <span class="str">"success"</span>,
+  "<span class="key">data</span>": {
+    "<span class="key">webhook_url</span>": <span class="str">"https://yourapp.com/webhooks/cip"</span>
+  }
+}</code></pre>
+        </div>
+
+        <h4>Try it</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">cURL</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>curl -X PATCH https://api.cip.pk/api/v1/tenants/me/settings/webhooks \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"webhook_url": "https://yourapp.com/webhooks/cip"}'</code></pre>
+        </div>
+      </div>
+
+      <div class="endpoint" id="webhook-test">
+        <div class="endpoint-header">
+          <span class="method method-post">POST</span>
+          <span class="endpoint-path">/tenants/me/webhooks/test</span>
+          <span class="endpoint-auth auth-jwt">JWT Required</span>
+        </div>
+        <p>Send a test webhook payload to your configured URL to verify connectivity.</p>
+
+        <h4>Response (200 OK)</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JSON</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>{
+  "<span class="key">status</span>": <span class="str">"success"</span>,
+  "<span class="key">data</span>": {
+    "<span class="key">delivered</span>": <span class="kw">true</span>,
+    "<span class="key">statusCode</span>": <span class="num">200</span>,
+    "<span class="key">error</span>": <span class="kw">null</span>
+  }
+}</code></pre>
+        </div>
+
+        <h4>Test Webhook Payload</h4>
+        <p>The test payload sent to your URL:</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">JSON</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>{
+  "<span class="key">event</span>": <span class="str">"test.ping"</span>,
+  "<span class="key">data</span>": {
+    "<span class="key">message</span>": <span class="str">"CIP webhook test"</span>,
+    "<span class="key">tenantId</span>": <span class="str">"your-tenant-id"</span>
+  }
+}</code></pre>
+        </div>
+
+        <h4>Try it</h4>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">cURL</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+          </div>
+          <pre><code>curl -X POST https://api.cip.pk/api/v1/tenants/me/webhooks/test \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"</code></pre>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- Error Codes -->
+      <!-- ================================================================= -->
+
+      <h2 id="errors">Error Codes</h2>
+      <p>All error responses follow this format:</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JSON</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>{
+  "<span class="key">detail</span>": <span class="str">"Human-readable error message"</span>
+}</code></pre>
+      </div>
+
+      <table>
+        <tr><th>HTTP Code</th><th>Meaning</th><th>Common Causes</th></tr>
+        <tr><td>400</td><td>Bad Request</td><td>Invalid JSON, missing required fields, file too large, unsupported file type</td></tr>
+        <tr><td>401</td><td>Unauthorized</td><td>Missing or invalid Authorization header, expired JWT</td></tr>
+        <tr><td>403</td><td>Forbidden</td><td>Platform admin accessing tenant endpoint, insufficient role permissions</td></tr>
+        <tr><td>404</td><td>Not Found</td><td>Session/customer/wallet not found, or belongs to different tenant</td></tr>
+        <tr><td>409</td><td>Conflict</td><td>Session already completed, duplicate external_ref</td></tr>
+        <tr><td>422</td><td>Validation Error</td><td>Pydantic validation failure on request body</td></tr>
+        <tr><td>429</td><td>Too Many Requests</td><td>Rate limit exceeded. Retry with exponential backoff.</td></tr>
+        <tr><td>500</td><td>Internal Server Error</td><td>Server-side error. Contact CIP support.</td></tr>
+      </table>
+
+      <div class="info-box warning">
+        <h4>Rate Limits</h4>
+        <p>Default rate limits: 100 requests/minute for session creation, 300 requests/minute for status checks, 60 requests/minute for frame processing. Contact CIP support for higher limits.</p>
+      </div>
+
+    </div>
+
+    <footer class="footer">
+      <div><span class="footer-brand">CIP <span>Compliance Infrastructure Platform</span></span></div>
+      <div>Built for Pakistan's Virtual Assets Act 2026</div>
+    </footer>
+  </div>
+</div>
+
+<script>
+function copyCode(btn) {
+  const code = btn.closest('.code-block').querySelector('code');
+  navigator.clipboard.writeText(code.textContent).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.style.color = '#00A651';
+    btn.style.borderColor = '#00A651';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>

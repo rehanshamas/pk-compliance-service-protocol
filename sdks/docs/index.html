@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CIP KYC Integration Guide</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0A0A0C;
+    --bg-card: #111114;
+    --bg-code: #141416;
+    --bg-sidebar: #0D0D10;
+    --text: #F5F5F5;
+    --text-muted: #9CA3AF;
+    --accent: #F28A17;
+    --accent-dim: rgba(242,138,23,0.15);
+    --border: #1E1E24;
+    --green: #00A651;
+    --radius: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.7; font-size: 15px; }
+  a { color: var(--accent); text-decoration: none; transition: opacity 0.2s; }
+  a:hover { opacity: 0.85; text-decoration: underline; }
+
+  /* Layout */
+  .page { display: flex; min-height: 100vh; }
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
+    background: var(--bg-sidebar); border-right: 1px solid var(--border);
+    padding: 24px 0; overflow-y: auto; z-index: 100;
+  }
+  .sidebar-logo { padding: 0 24px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .sidebar-logo h2 { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+  .sidebar-logo h2 span { color: var(--accent); }
+  .sidebar-logo p { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .sidebar nav { padding: 0 12px; }
+  .sidebar nav a {
+    display: block; padding: 8px 12px; border-radius: 8px; font-size: 13px;
+    color: var(--text-muted); transition: all 0.15s; margin-bottom: 2px;
+  }
+  .sidebar nav a:hover, .sidebar nav a.active { background: var(--accent-dim); color: var(--accent); text-decoration: none; }
+  .sidebar nav .nav-section { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 16px 12px 6px; font-weight: 700; }
+  .main { margin-left: 260px; flex: 1; padding: 0; }
+
+  /* Hero */
+  .hero {
+    position: relative; padding: 80px 48px 60px; overflow: hidden;
+    background: linear-gradient(135deg, rgba(242,138,23,0.06) 0%, transparent 50%);
+    border-bottom: 1px solid var(--border);
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -120px; right: -120px;
+    width: 400px; height: 400px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(242,138,23,0.08), transparent 70%);
+    pointer-events: none;
+  }
+  .hero h1 { font-size: 42px; font-weight: 800; letter-spacing: -1.5px; line-height: 1.15; max-width: 700px; }
+  .hero h1 span { color: var(--accent); }
+  .hero p { font-size: 17px; color: var(--text-muted); margin-top: 16px; max-width: 600px; line-height: 1.7; }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 24px;
+    padding: 6px 14px; border-radius: 20px; background: var(--accent-dim);
+    font-size: 12px; font-weight: 600; color: var(--accent);
+  }
+
+  /* Content */
+  .content { max-width: 900px; padding: 48px; }
+  .content h2 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; margin-top: 48px; }
+  .content h2:first-child { margin-top: 0; }
+  .content h3 { font-size: 18px; font-weight: 700; margin-top: 32px; margin-bottom: 8px; }
+  .content p { color: var(--text-muted); margin-bottom: 16px; }
+  .content ul, .content ol { color: var(--text-muted); padding-left: 24px; margin-bottom: 16px; }
+  .content li { margin-bottom: 6px; }
+  .content li strong { color: var(--text); }
+  .content code {
+    font-family: var(--font-mono); background: var(--bg-code); padding: 2px 7px;
+    border-radius: 4px; font-size: 13px; color: var(--accent);
+  }
+
+  /* Cards grid */
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin: 24px 0; }
+  .card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 24px; transition: all 0.2s; display: flex; flex-direction: column;
+  }
+  .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 32px rgba(242,138,23,0.08); }
+  .card-icon {
+    width: 44px; height: 44px; border-radius: 10px; background: var(--accent-dim);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 14px; font-size: 20px;
+  }
+  .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+  .card p { font-size: 13px; color: var(--text-muted); line-height: 1.6; flex: 1; }
+  .card .card-link { font-size: 13px; color: var(--accent); margin-top: 12px; font-weight: 600; }
+  .card .card-link:hover { text-decoration: none; opacity: 0.85; }
+
+  /* Flow diagram */
+  .flow { display: flex; align-items: center; gap: 0; margin: 32px 0; flex-wrap: wrap; justify-content: center; }
+  .flow-step {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 20px; text-align: center; min-width: 140px;
+  }
+  .flow-step .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%; background: var(--accent);
+    color: #000; font-weight: 800; font-size: 13px; margin-bottom: 8px;
+  }
+  .flow-step .label { font-size: 13px; font-weight: 600; }
+  .flow-step .desc { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .flow-arrow { font-size: 20px; color: var(--accent); padding: 0 8px; }
+
+  /* Prereq */
+  .prereq-box {
+    background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: var(--radius); padding: 20px 24px; margin: 24px 0;
+  }
+  .prereq-box h4 { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: var(--accent); }
+  .prereq-box ul { margin: 0; padding-left: 20px; }
+  .prereq-box li { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+
+  /* Footer */
+  .footer {
+    border-top: 1px solid var(--border); padding: 32px 48px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .footer-brand { font-weight: 700; color: var(--text); }
+  .footer-brand span { color: var(--accent); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .hero { padding: 48px 24px 40px; }
+    .hero h1 { font-size: 28px; }
+    .content { padding: 24px; }
+    .cards { grid-template-columns: 1fr; }
+    .flow { flex-direction: column; }
+    .flow-arrow { transform: rotate(90deg); }
+    .footer { flex-direction: column; gap: 8px; text-align: center; padding: 24px; }
+  }
+
+  /* Mobile hamburger */
+  .mobile-nav { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 200; background: var(--bg-sidebar); border-bottom: 1px solid var(--border); padding: 12px 16px; }
+  .mobile-nav button { background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; }
+  @media (max-width: 768px) {
+    .mobile-nav { display: flex; justify-content: space-between; align-items: center; }
+    .mobile-nav .brand { font-size: 15px; font-weight: 800; }
+    .mobile-nav .brand span { color: var(--accent); }
+    .sidebar.open { display: block; z-index: 300; width: 100%; }
+    .hero { padding-top: 100px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mobile-nav">
+  <div class="brand">CIP <span>Docs</span></div>
+  <button onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+</div>
+
+<div class="page">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h2>CIP <span>Docs</span></h2>
+      <p>Integration Guide v1.0</p>
+    </div>
+    <nav>
+      <div class="nav-section">Getting Started</div>
+      <a href="index.html" class="active">Overview</a>
+      <a href="#prerequisites">Prerequisites</a>
+      <a href="#kyc-flow">KYC Flow</a>
+
+      <div class="nav-section">Integration Methods</div>
+      <a href="webview.html">WebView / Redirect</a>
+      <a href="web-sdk.html">Web SDK</a>
+      <a href="react-native.html">React Native SDK</a>
+
+      <div class="nav-section">Reference</div>
+      <a href="api-reference.html">API Reference</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <!-- Hero -->
+    <section class="hero">
+      <h1>CIP <span>KYC</span> Integration Guide</h1>
+      <p>
+        Integrate identity verification into your VASP platform in minutes.
+        Three integration methods, one API. NADRA-verified, PVARA-compliant KYC for Pakistan.
+      </p>
+      <div class="hero-badge">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        PVARA NOC Aligned &middot; NADRA Integrated &middot; FATF Compliant
+      </div>
+    </section>
+
+    <div class="content">
+      <!-- Integration Methods -->
+      <h2>Choose Your Integration Method</h2>
+      <p>CIP offers three ways to add KYC verification to your platform. Pick the one that best fits your architecture.</p>
+
+      <div class="cards">
+        <a href="webview.html" class="card" style="text-decoration:none;">
+          <div class="card-icon">&#127760;</div>
+          <h3>WebView / Redirect</h3>
+          <p>Simplest integration. Redirect users to a CIP-hosted verification page. Works with any platform &mdash; web, mobile, or desktop. No SDK required.</p>
+          <span class="card-link">Get started &#8594;</span>
+        </a>
+        <a href="web-sdk.html" class="card" style="text-decoration:none;">
+          <div class="card-icon">&#128187;</div>
+          <h3>Web SDK</h3>
+          <p>Embed the KYC flow directly into your web application. Full control over branding and UX. No redirects &mdash; users never leave your site.</p>
+          <span class="card-link">Get started &#8594;</span>
+        </a>
+        <a href="react-native.html" class="card" style="text-decoration:none;">
+          <div class="card-icon">&#128241;</div>
+          <h3>React Native SDK</h3>
+          <p>Native KYC experience in your React Native or Expo mobile app. Camera capture, liveness detection, and document verification built in.</p>
+          <span class="card-link">Get started &#8594;</span>
+        </a>
+      </div>
+
+      <!-- Prerequisites -->
+      <h2 id="prerequisites">Prerequisites</h2>
+      <p>Before integrating, make sure you have the following:</p>
+
+      <div class="prereq-box">
+        <h4>1. CIP Tenant Account</h4>
+        <ul>
+          <li>Apply for a CIP account at <a href="https://app.cip.pk/apply">app.cip.pk/apply</a></li>
+          <li>Your application will be reviewed within 2-3 business days</li>
+          <li>Once approved, you will receive dashboard access</li>
+        </ul>
+      </div>
+
+      <div class="prereq-box">
+        <h4>2. API Key</h4>
+        <ul>
+          <li>Generate an API key from <strong>Settings &gt; API Keys</strong> in the CIP dashboard</li>
+          <li>Keys are prefixed with <code>cip_live_</code></li>
+          <li>Store securely &mdash; the key is shown only once</li>
+          <li>Only MLRO or Compliance Officer roles can generate keys</li>
+        </ul>
+      </div>
+
+      <div class="prereq-box">
+        <h4>3. Session Creation</h4>
+        <ul>
+          <li>All KYC flows start by creating a session from your backend</li>
+          <li><code>POST /api/v1/kyc-sessions</code> returns a <code>session_id</code></li>
+          <li>Pass the <code>session_id</code> to your frontend (SDK or redirect URL)</li>
+          <li>Sessions expire after 30 minutes of inactivity</li>
+        </ul>
+      </div>
+
+      <!-- KYC Flow -->
+      <h2 id="kyc-flow">KYC Verification Flow</h2>
+      <p>Regardless of integration method, every KYC session follows this flow:</p>
+
+      <div class="flow">
+        <div class="flow-step">
+          <div class="num">1</div>
+          <div class="label">Create Session</div>
+          <div class="desc">Your backend calls CIP API</div>
+        </div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-step">
+          <div class="num">2</div>
+          <div class="label">Document Capture</div>
+          <div class="desc">CNIC front &amp; back</div>
+        </div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-step">
+          <div class="num">3</div>
+          <div class="label">Selfie</div>
+          <div class="desc">Face match with document</div>
+        </div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-step">
+          <div class="num">4</div>
+          <div class="label">Liveness</div>
+          <div class="desc">Blink + head turn (advanced)</div>
+        </div>
+        <div class="flow-arrow">&#8594;</div>
+        <div class="flow-step">
+          <div class="num">5</div>
+          <div class="label">Result</div>
+          <div class="desc">Approved / Rejected / Pending</div>
+        </div>
+      </div>
+
+      <h3>Verification Levels</h3>
+      <ul>
+        <li><strong>Basic</strong> &mdash; Document capture (front + back) and selfie with face matching. Suitable for CDD (Customer Due Diligence).</li>
+        <li><strong>Advanced</strong> &mdash; Everything in basic, plus liveness detection (blink + head turn) and document-in-hand photo. Required for EDD (Enhanced Due Diligence) and higher-risk customers.</li>
+      </ul>
+
+      <h3>Session Statuses</h3>
+      <ul>
+        <li><strong><code>pending</code></strong> &mdash; Session created, waiting for user to begin</li>
+        <li><strong><code>in_progress</code></strong> &mdash; User has started verification</li>
+        <li><strong><code>completed</code></strong> &mdash; All steps done, result determined</li>
+        <li><strong><code>expired</code></strong> &mdash; Session timed out</li>
+      </ul>
+
+      <h3>KYC Result Statuses</h3>
+      <ul>
+        <li><strong><code>approved</code></strong> &mdash; Identity verified successfully. Customer created in CIP.</li>
+        <li><strong><code>rejected</code></strong> &mdash; Verification failed (document mismatch, liveness fail, etc.)</li>
+        <li><strong><code>pending</code></strong> &mdash; Under manual review by CIP or your compliance team</li>
+      </ul>
+
+      <h2>Webhook Notifications</h2>
+      <p>CIP sends real-time webhook notifications to your configured URL when KYC session status changes. Configure your webhook URL in <strong>Settings &gt; Webhooks</strong>.</p>
+      <p>Webhook events include:</p>
+      <ul>
+        <li><strong><code>kyc.session.completed</code></strong> &mdash; Session finished, result available</li>
+        <li><strong><code>kyc.session.approved</code></strong> &mdash; Customer identity verified</li>
+        <li><strong><code>kyc.session.rejected</code></strong> &mdash; Verification failed</li>
+        <li><strong><code>kyc.session.expired</code></strong> &mdash; Session timed out</li>
+        <li><strong><code>screening.match_found</code></strong> &mdash; Sanctions match detected</li>
+        <li><strong><code>wallet.risk_changed</code></strong> &mdash; Wallet risk score updated</li>
+      </ul>
+
+      <h2>Next Steps</h2>
+      <div class="cards">
+        <a href="webview.html" class="card" style="text-decoration:none;">
+          <h3>WebView Guide</h3>
+          <p>Zero-code frontend. Just redirect.</p>
+          <span class="card-link">Read guide &#8594;</span>
+        </a>
+        <a href="web-sdk.html" class="card" style="text-decoration:none;">
+          <h3>Web SDK Guide</h3>
+          <p>Embed inline in your web app.</p>
+          <span class="card-link">Read guide &#8594;</span>
+        </a>
+        <a href="react-native.html" class="card" style="text-decoration:none;">
+          <h3>React Native Guide</h3>
+          <p>Native mobile verification.</p>
+          <span class="card-link">Read guide &#8594;</span>
+        </a>
+        <a href="api-reference.html" class="card" style="text-decoration:none;">
+          <h3>API Reference</h3>
+          <p>Full endpoint documentation.</p>
+          <span class="card-link">Read guide &#8594;</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div><span class="footer-brand">CIP <span>Compliance Infrastructure Platform</span></span></div>
+      <div>Built for Pakistan's Virtual Assets Act 2026</div>
+    </footer>
+  </div>
+</div>
+
+</body>
+</html>

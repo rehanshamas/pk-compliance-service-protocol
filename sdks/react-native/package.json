@@ -1,0 +1,21 @@
+{
+  "name": "@cip/kyc-react-native",
+  "version": "1.0.0",
+  "description": "CIP KYC React Native SDK — embed identity verification in your mobile app",
+  "main": "src/index.tsx",
+  "types": "src/index.tsx",
+  "scripts": {
+    "build": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-native": ">=0.70.0",
+    "expo-camera": ">=14.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-native": "^0.70.0"
+  },
+  "license": "MIT"
+}

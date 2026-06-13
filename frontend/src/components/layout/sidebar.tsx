@@ -124,6 +124,8 @@ const MLRO_NAV_SECTIONS: NavSection[] = [
           { label: "Monitoring Rules", href: "/settings/monitoring", visibilityKey: "vasp_settings_monitoring_enabled" },
           { label: "Record Retention", href: "/settings/retention", visibilityKey: "vasp_settings_retention_enabled" },
           { label: "Analytics", href: "/settings/analytics", visibilityKey: "vasp_settings_analytics_enabled" },
+          { label: "KYC Settings", href: "/settings/kyc", visibilityKey: "vasp_settings_kyc_enabled" },
+          { label: "Auto-Freeze", href: "/settings/freeze", visibilityKey: "vasp_settings_freeze_enabled" },
           { label: "Usage & Billing", href: "/settings/billing", visibilityKey: "vasp_settings_billing_enabled" },
           { label: "API Explorer", href: "/settings/api-explorer", visibilityKey: "vasp_settings_api_explorer_enabled" },
         ],

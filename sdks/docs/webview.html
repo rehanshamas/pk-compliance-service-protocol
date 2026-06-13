@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebView / Redirect Integration - CIP Docs</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0A0A0C; --bg-card: #111114; --bg-code: #141416; --bg-sidebar: #0D0D10;
+    --text: #F5F5F5; --text-muted: #9CA3AF; --accent: #F28A17; --accent-dim: rgba(242,138,23,0.15);
+    --border: #1E1E24; --green: #00A651; --red: #EF4444; --radius: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.7; font-size: 15px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { opacity: 0.85; text-decoration: underline; }
+  .page { display: flex; min-height: 100vh; }
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0; width: 260px;
+    background: var(--bg-sidebar); border-right: 1px solid var(--border);
+    padding: 24px 0; overflow-y: auto; z-index: 100;
+  }
+  .sidebar-logo { padding: 0 24px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .sidebar-logo h2 { font-size: 18px; font-weight: 800; }
+  .sidebar-logo h2 span { color: var(--accent); }
+  .sidebar-logo p { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .sidebar nav { padding: 0 12px; }
+  .sidebar nav a { display: block; padding: 8px 12px; border-radius: 8px; font-size: 13px; color: var(--text-muted); transition: all 0.15s; margin-bottom: 2px; }
+  .sidebar nav a:hover, .sidebar nav a.active { background: var(--accent-dim); color: var(--accent); text-decoration: none; }
+  .sidebar nav .nav-section { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 16px 12px 6px; font-weight: 700; }
+  .main { margin-left: 260px; flex: 1; }
+
+  /* Content */
+  .content { max-width: 900px; padding: 48px; }
+  .content h1 { font-size: 34px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+  .content h1 span { color: var(--accent); }
+  .content .subtitle { font-size: 16px; color: var(--text-muted); margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+  .content h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; margin-top: 48px; }
+  .content h2:first-of-type { margin-top: 0; }
+  .content h3 { font-size: 17px; font-weight: 700; margin-top: 28px; margin-bottom: 8px; }
+  .content h4 { font-size: 14px; font-weight: 700; margin-top: 20px; margin-bottom: 6px; color: var(--accent); }
+  .content p { color: var(--text-muted); margin-bottom: 16px; }
+  .content ul, .content ol { color: var(--text-muted); padding-left: 24px; margin-bottom: 16px; }
+  .content li { margin-bottom: 6px; }
+  .content li strong { color: var(--text); }
+  .content code { font-family: var(--font-mono); background: var(--bg-code); padding: 2px 7px; border-radius: 4px; font-size: 13px; color: var(--accent); }
+
+  /* Code blocks */
+  .code-block { position: relative; margin: 16px 0 24px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+  .code-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: #1a1a1e; border-bottom: 1px solid var(--border); }
+  .code-lang { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
+  .copy-btn { background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: all 0.15s; font-family: var(--font); }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .code-block pre { background: var(--bg-code); padding: 16px; overflow-x: auto; margin: 0; }
+  .code-block pre code { background: none; padding: 0; font-size: 13px; line-height: 1.6; color: var(--text-muted); }
+  .code-block pre code .kw { color: #C678DD; }
+  .code-block pre code .str { color: #98C379; }
+  .code-block pre code .cm { color: #5C6370; font-style: italic; }
+  .code-block pre code .fn { color: #61AFEF; }
+  .code-block pre code .num { color: #D19A66; }
+  .code-block pre code .key { color: #E06C75; }
+
+  /* Info boxes */
+  .info-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin: 20px 0; }
+  .info-box.tip { border-left: 3px solid var(--green); }
+  .info-box.warning { border-left: 3px solid #EAB308; }
+  .info-box.danger { border-left: 3px solid var(--red); }
+  .info-box h4 { margin-top: 0; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .info-box.tip h4 { color: var(--green); }
+  .info-box.warning h4 { color: #EAB308; }
+  .info-box.danger h4 { color: var(--red); }
+  .info-box p, .info-box ul { font-size: 13px; margin-bottom: 0; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+  th { text-align: left; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border); font-weight: 700; color: var(--text); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 10px 14px; border: 1px solid var(--border); color: var(--text-muted); vertical-align: top; }
+  td code { font-size: 12px; }
+  tr:hover td { background: rgba(242,138,23,0.03); }
+
+  /* Flow diagram */
+  .flow-diagram { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; margin: 24px 0; text-align: center; }
+  .flow-row { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; margin-bottom: 12px; }
+  .flow-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; font-size: 12px; font-weight: 600; min-width: 120px; }
+  .flow-box.highlight { border-color: var(--accent); color: var(--accent); }
+  .flow-connector { color: var(--accent); font-size: 18px; padding: 0 6px; }
+
+  /* Footer */
+  .footer { border-top: 1px solid var(--border); padding: 32px 48px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); }
+  .footer-brand { font-weight: 700; color: var(--text); }
+  .footer-brand span { color: var(--accent); }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .content { padding: 24px; }
+    .flow-row { flex-direction: column; }
+    .flow-connector { transform: rotate(90deg); }
+    .footer { flex-direction: column; gap: 8px; padding: 24px; }
+    table { display: block; overflow-x: auto; }
+  }
+  .mobile-nav { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 200; background: var(--bg-sidebar); border-bottom: 1px solid var(--border); padding: 12px 16px; }
+  .mobile-nav button { background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; }
+  @media (max-width: 768px) {
+    .mobile-nav { display: flex; justify-content: space-between; align-items: center; }
+    .mobile-nav .brand { font-size: 15px; font-weight: 800; }
+    .mobile-nav .brand span { color: var(--accent); }
+    .sidebar.open { display: block; z-index: 300; width: 100%; }
+    .content { padding-top: 72px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mobile-nav">
+  <div class="brand">CIP <span>Docs</span></div>
+  <button onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+</div>
+
+<div class="page">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h2>CIP <span>Docs</span></h2>
+      <p>Integration Guide v1.0</p>
+    </div>
+    <nav>
+      <div class="nav-section">Getting Started</div>
+      <a href="index.html">Overview</a>
+
+      <div class="nav-section">Integration Methods</div>
+      <a href="webview.html" class="active">WebView / Redirect</a>
+      <a href="web-sdk.html">Web SDK</a>
+      <a href="react-native.html">React Native SDK</a>
+
+      <div class="nav-section">This Page</div>
+      <a href="#overview">Overview</a>
+      <a href="#flow">Integration Flow</a>
+      <a href="#api-reference">API Reference</a>
+      <a href="#code-examples">Code Examples</a>
+      <a href="#configuration">Configuration</a>
+      <a href="#webhooks">Webhooks</a>
+      <a href="#error-handling">Error Handling</a>
+      <a href="#testing">Testing</a>
+
+      <div class="nav-section">Reference</div>
+      <a href="api-reference.html">API Reference</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="content">
+      <h1>WebView / <span>Redirect</span> Integration</h1>
+      <p class="subtitle">Simplest integration &mdash; redirect users to a CIP-hosted verification page. No SDK required.</p>
+
+      <!-- Overview -->
+      <h2 id="overview">Overview</h2>
+      <p>The WebView/Redirect integration is the fastest way to add KYC to your platform. Your backend creates a session, you redirect the user to the CIP-hosted verification page, and CIP handles the entire UI. When done, the user is redirected back to your callback URL with the result.</p>
+
+      <div class="info-box tip">
+        <h4>Best for</h4>
+        <ul>
+          <li>Rapid integration &mdash; no frontend code required</li>
+          <li>Platforms that want CIP to handle the entire KYC UI</li>
+          <li>Mobile apps using WebView or in-app browser</li>
+          <li>Server-rendered applications (PHP, Django, Rails, etc.)</li>
+        </ul>
+      </div>
+
+      <!-- Flow -->
+      <h2 id="flow">Integration Flow</h2>
+
+      <div class="flow-diagram">
+        <div class="flow-row">
+          <div class="flow-box">Your Backend</div>
+          <div class="flow-connector">&#8594;</div>
+          <div class="flow-box highlight">CIP API</div>
+          <div class="flow-connector">&#8594;</div>
+          <div class="flow-box">Session Created</div>
+        </div>
+        <div style="color:var(--accent);font-size:18px;margin:8px 0;">&#8595;</div>
+        <div class="flow-row">
+          <div class="flow-box">User Browser</div>
+          <div class="flow-connector">&#8594;</div>
+          <div class="flow-box highlight">CIP Verify Page</div>
+          <div class="flow-connector">&#8594;</div>
+          <div class="flow-box">KYC Steps</div>
+        </div>
+        <div style="color:var(--accent);font-size:18px;margin:8px 0;">&#8595;</div>
+        <div class="flow-row">
+          <div class="flow-box highlight">Redirect to Callback</div>
+          <div class="flow-connector">&#8594;</div>
+          <div class="flow-box">Your App</div>
+          <div class="flow-connector">+</div>
+          <div class="flow-box">Webhook</div>
+        </div>
+      </div>
+
+      <h3>Step-by-step</h3>
+      <ol>
+        <li><strong>Create a KYC session</strong> &mdash; Your backend calls <code>POST /api/v1/kyc-sessions</code> with the customer's details and callback URLs. CIP returns a <code>session_id</code>, <code>web_url</code>, and <code>mobile_url</code>.</li>
+        <li><strong>Redirect the user</strong> &mdash; Send the user to the <code>web_url</code> (for browsers) or <code>mobile_url</code> (for mobile deep links). The CIP-hosted page handles document capture, selfie, and liveness.</li>
+        <li><strong>User completes verification</strong> &mdash; The user follows on-screen instructions: capture CNIC front/back, take a selfie, and (for advanced verification) complete liveness checks.</li>
+        <li><strong>CIP redirects back</strong> &mdash; After completion, CIP redirects the user to your <code>web_callback_url</code> with query parameters: <code>?session_id=xxx&status=approved</code></li>
+        <li><strong>Receive webhook</strong> &mdash; CIP sends a webhook to your configured URL with the full session result, including KYC status, risk tier, and customer ID.</li>
+      </ol>
+
+      <!-- API Reference -->
+      <h2 id="api-reference">API Reference</h2>
+
+      <h3>Create Session</h3>
+      <p><code>POST /api/v1/kyc-sessions</code></p>
+      <p>Creates a new KYC session. Requires JWT authentication (your VASP API key).</p>
+
+      <h4>Request Body</h4>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JSON</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>{
+  "<span class="key">external_ref</span>": <span class="str">"user-12345"</span>,
+  "<span class="key">customer_name</span>": <span class="str">"Ahmed Khan"</span>,
+  "<span class="key">customer_cnic</span>": <span class="str">"42101-1234567-8"</span>,
+  "<span class="key">customer_phone</span>": <span class="str">"+923001234567"</span>,
+  "<span class="key">customer_dob</span>": <span class="str">"1995-03-15"</span>,
+  "<span class="key">customer_nationality</span>": <span class="str">"Pakistani"</span>,
+  "<span class="key">web_callback_url</span>": <span class="str">"https://yourapp.com/kyc/callback"</span>,
+  "<span class="key">mobile_callback_url</span>": <span class="str">"yourapp://kyc/callback"</span>
+}</code></pre>
+      </div>
+
+      <table>
+        <tr><th>Field</th><th>Type</th><th>Required</th><th>Description</th></tr>
+        <tr><td><code>external_ref</code></td><td>string</td><td>No</td><td>Your internal user/customer ID (max 255 chars)</td></tr>
+        <tr><td><code>customer_name</code></td><td>string</td><td>No</td><td>Pre-fill customer name</td></tr>
+        <tr><td><code>customer_cnic</code></td><td>string</td><td>No</td><td>Pre-fill CNIC number (for NADRA verification)</td></tr>
+        <tr><td><code>customer_phone</code></td><td>string</td><td>No</td><td>Customer phone number</td></tr>
+        <tr><td><code>customer_dob</code></td><td>string</td><td>No</td><td>Date of birth (YYYY-MM-DD)</td></tr>
+        <tr><td><code>customer_nationality</code></td><td>string</td><td>No</td><td>Customer nationality</td></tr>
+        <tr><td><code>web_callback_url</code></td><td>string</td><td>No</td><td>Redirect URL after completion (web browser)</td></tr>
+        <tr><td><code>mobile_callback_url</code></td><td>string</td><td>No</td><td>Deep link for mobile app callback</td></tr>
+      </table>
+
+      <h4>Response (201 Created)</h4>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JSON</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>{
+  "<span class="key">session_id</span>": <span class="str">"a1b2c3d4-e5f6-7890-abcd-ef1234567890"</span>,
+  "<span class="key">status</span>": <span class="str">"pending"</span>,
+  "<span class="key">current_step</span>": <span class="str">"upload"</span>,
+  "<span class="key">kyc_status</span>": <span class="kw">null</span>,
+  "<span class="key">risk_tier</span>": <span class="kw">null</span>,
+  "<span class="key">customer_id</span>": <span class="kw">null</span>,
+  "<span class="key">liveness_required</span>": <span class="kw">false</span>,
+  "<span class="key">web_url</span>": <span class="str">"https://app.cip.pk/verify/a1b2c3d4-e5f6-7890-abcd-ef1234567890"</span>,
+  "<span class="key">mobile_url</span>": <span class="str">"cip://verify/a1b2c3d4-e5f6-7890-abcd-ef1234567890"</span>,
+  "<span class="key">expires_at</span>": <span class="str">"2026-03-31T15:30:00Z"</span>,
+  "<span class="key">completed_at</span>": <span class="kw">null</span>,
+  "<span class="key">created_at</span>": <span class="str">"2026-03-31T15:00:00Z"</span>
+}</code></pre>
+      </div>
+
+      <h3>Check Session Status</h3>
+      <p><code>GET /api/v1/kyc-sessions/{session_id}</code></p>
+      <p>Poll this endpoint to check the current state of a session. Requires JWT authentication.</p>
+
+      <h4>Response (200 OK)</h4>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JSON</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>{
+  "<span class="key">session_id</span>": <span class="str">"a1b2c3d4-e5f6-7890-abcd-ef1234567890"</span>,
+  "<span class="key">status</span>": <span class="str">"completed"</span>,
+  "<span class="key">current_step</span>": <span class="str">"complete"</span>,
+  "<span class="key">kyc_status</span>": <span class="str">"approved"</span>,
+  "<span class="key">risk_tier</span>": <span class="str">"low"</span>,
+  "<span class="key">customer_id</span>": <span class="str">"cust-9876-fedc-ba09"</span>,
+  "<span class="key">completed_at</span>": <span class="str">"2026-03-31T15:05:32Z"</span>
+}</code></pre>
+      </div>
+
+      <h3>Webhook Payload</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JSON</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>{
+  "<span class="key">event</span>": <span class="str">"kyc.session.completed"</span>,
+  "<span class="key">timestamp</span>": <span class="str">"2026-03-31T15:05:32Z"</span>,
+  "<span class="key">data</span>": {
+    "<span class="key">session_id</span>": <span class="str">"a1b2c3d4-e5f6-7890-abcd-ef1234567890"</span>,
+    "<span class="key">status</span>": <span class="str">"completed"</span>,
+    "<span class="key">kyc_status</span>": <span class="str">"approved"</span>,
+    "<span class="key">risk_tier</span>": <span class="str">"low"</span>,
+    "<span class="key">customer_id</span>": <span class="str">"cust-9876-fedc-ba09"</span>,
+    "<span class="key">external_ref</span>": <span class="str">"user-12345"</span>
+  }
+}</code></pre>
+      </div>
+
+      <!-- Code Examples -->
+      <h2 id="code-examples">Code Examples</h2>
+
+      <h3>Backend: Create Session (Node.js)</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="kw">const</span> <span class="fn">createKycSession</span> = <span class="kw">async</span> (userId, userName, userCnic) =&gt; {
+  <span class="kw">const</span> response = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'https://api.cip.pk/api/v1/kyc-sessions'</span>, {
+    method: <span class="str">'POST'</span>,
+    headers: {
+      <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span>,
+      <span class="str">'Authorization'</span>: <span class="str">`Bearer ${process.env.CIP_JWT_TOKEN}`</span>,
+    },
+    body: JSON.<span class="fn">stringify</span>({
+      external_ref: userId,
+      customer_name: userName,
+      customer_cnic: userCnic,
+      web_callback_url: <span class="str">'https://yourapp.com/kyc/callback'</span>,
+      mobile_callback_url: <span class="str">'yourapp://kyc/callback'</span>,
+    }),
+  });
+
+  <span class="kw">const</span> data = <span class="kw">await</span> response.<span class="fn">json</span>();
+  <span class="kw">return</span> data; <span class="cm">// { session_id, web_url, mobile_url, ... }</span>
+};</code></pre>
+      </div>
+
+      <h3>Backend: Create Session (Python)</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">Python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="kw">import</span> httpx
+
+<span class="kw">async def</span> <span class="fn">create_kyc_session</span>(user_id: str, name: str, cnic: str) -&gt; dict:
+    <span class="kw">async with</span> httpx.<span class="fn">AsyncClient</span>() <span class="kw">as</span> client:
+        resp = <span class="kw">await</span> client.<span class="fn">post</span>(
+            <span class="str">"https://api.cip.pk/api/v1/kyc-sessions"</span>,
+            headers={
+                <span class="str">"Authorization"</span>: <span class="str">f"Bearer {CIP_JWT_TOKEN}"</span>,
+                <span class="str">"Content-Type"</span>: <span class="str">"application/json"</span>,
+            },
+            json={
+                <span class="str">"external_ref"</span>: user_id,
+                <span class="str">"customer_name"</span>: name,
+                <span class="str">"customer_cnic"</span>: cnic,
+                <span class="str">"web_callback_url"</span>: <span class="str">"https://yourapp.com/kyc/callback"</span>,
+                <span class="str">"mobile_callback_url"</span>: <span class="str">"yourapp://kyc/callback"</span>,
+            },
+        )
+        resp.<span class="fn">raise_for_status</span>()
+        <span class="kw">return</span> resp.<span class="fn">json</span>()  <span class="cm"># { session_id, web_url, mobile_url, ... }</span></code></pre>
+      </div>
+
+      <h3>Web: Redirect to CIP</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML / JavaScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm">&lt;!-- Redirect user to CIP verification page --&gt;</span>
+&lt;button id=<span class="str">"start-kyc"</span>&gt;Verify Identity&lt;/button&gt;
+
+&lt;script&gt;
+document.<span class="fn">getElementById</span>(<span class="str">'start-kyc'</span>).<span class="fn">addEventListener</span>(<span class="str">'click'</span>, <span class="kw">async</span> () =&gt; {
+  <span class="cm">// Call YOUR backend to create a session</span>
+  <span class="kw">const</span> res = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'/api/kyc/create-session'</span>, { method: <span class="str">'POST'</span> });
+  <span class="kw">const</span> { web_url } = <span class="kw">await</span> res.<span class="fn">json</span>();
+
+  <span class="cm">// Redirect to CIP hosted verification page</span>
+  window.location.href = web_url;
+});
+&lt;/script&gt;</code></pre>
+      </div>
+
+      <h3>Mobile: React Native WebView</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">React Native (TypeScript)</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="kw">import</span> { WebView } <span class="kw">from</span> <span class="str">'react-native-webview'</span>;
+
+<span class="kw">function</span> <span class="fn">KycScreen</span>({ sessionUrl }: { sessionUrl: string }) {
+  <span class="kw">return</span> (
+    &lt;WebView
+      source={{ uri: sessionUrl }}
+      onNavigationStateChange={(navState) =&gt; {
+        <span class="cm">// Detect callback URL redirect</span>
+        <span class="kw">if</span> (navState.url.<span class="fn">includes</span>(<span class="str">'yourapp.com/kyc/callback'</span>)) {
+          <span class="kw">const</span> url = <span class="kw">new</span> <span class="fn">URL</span>(navState.url);
+          <span class="kw">const</span> status = url.searchParams.<span class="fn">get</span>(<span class="str">'status'</span>);
+          <span class="kw">const</span> sessionId = url.searchParams.<span class="fn">get</span>(<span class="str">'session_id'</span>);
+          <span class="cm">// Handle result...</span>
+        }
+      }}
+      javaScriptEnabled
+      mediaPlaybackRequiresUserAction={<span class="kw">false</span>}
+      allowsInlineMediaPlayback
+    /&gt;
+  );
+}</code></pre>
+      </div>
+
+      <h3>Mobile: Swift (iOS WKWebView)</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">Swift</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="kw">import</span> WebKit
+
+<span class="kw">class</span> <span class="fn">KycViewController</span>: UIViewController, WKNavigationDelegate {
+    <span class="kw">var</span> webView: WKWebView!
+    <span class="kw">var</span> sessionUrl: String = <span class="str">""</span>
+
+    <span class="kw">override func</span> <span class="fn">viewDidLoad</span>() {
+        <span class="kw">super</span>.<span class="fn">viewDidLoad</span>()
+        webView = <span class="fn">WKWebView</span>(frame: view.bounds)
+        webView.navigationDelegate = <span class="kw">self</span>
+        view.<span class="fn">addSubview</span>(webView)
+
+        <span class="kw">if let</span> url = <span class="fn">URL</span>(string: sessionUrl) {
+            webView.<span class="fn">load</span>(<span class="fn">URLRequest</span>(url: url))
+        }
+    }
+
+    <span class="kw">func</span> webView(_ webView: WKWebView,
+                 decidePolicyFor navigationAction: WKNavigationAction,
+                 decisionHandler: @escaping (WKNavigationActionPolicy) -&gt; Void) {
+        <span class="kw">if let</span> url = navigationAction.request.url,
+           url.host == <span class="str">"yourapp.com"</span>,
+           url.path == <span class="str">"/kyc/callback"</span> {
+            <span class="cm">// Extract session_id and status from query params</span>
+            <span class="fn">handleKycComplete</span>(url: url)
+            decisionHandler(.<span class="fn">cancel</span>)
+            <span class="kw">return</span>
+        }
+        decisionHandler(.<span class="fn">allow</span>)
+    }
+}</code></pre>
+      </div>
+
+      <h3>Mobile: Kotlin (Android WebView)</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">Kotlin</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="kw">class</span> <span class="fn">KycActivity</span> : AppCompatActivity() {
+    <span class="kw">override fun</span> <span class="fn">onCreate</span>(savedInstanceState: Bundle?) {
+        <span class="kw">super</span>.<span class="fn">onCreate</span>(savedInstanceState)
+
+        <span class="kw">val</span> webView = <span class="fn">WebView</span>(<span class="kw">this</span>)
+        setContentView(webView)
+
+        webView.settings.javaScriptEnabled = <span class="kw">true</span>
+        webView.settings.mediaPlaybackRequiresUserGesture = <span class="kw">false</span>
+
+        webView.webViewClient = <span class="kw">object</span> : <span class="fn">WebViewClient</span>() {
+            <span class="kw">override fun</span> <span class="fn">shouldOverrideUrlLoading</span>(
+                view: WebView, request: WebResourceRequest
+            ): Boolean {
+                <span class="kw">val</span> url = request.url
+                <span class="kw">if</span> (url.host == <span class="str">"yourapp.com"</span> &amp;&amp;
+                    url.path == <span class="str">"/kyc/callback"</span>) {
+                    <span class="kw">val</span> status = url.<span class="fn">getQueryParameter</span>(<span class="str">"status"</span>)
+                    <span class="kw">val</span> sessionId = url.<span class="fn">getQueryParameter</span>(<span class="str">"session_id"</span>)
+                    <span class="fn">handleKycResult</span>(sessionId, status)
+                    <span class="kw">return true</span>
+                }
+                <span class="kw">return false</span>
+            }
+        }
+
+        webView.<span class="fn">loadUrl</span>(sessionUrl)
+    }
+}</code></pre>
+      </div>
+
+      <h3>Callback URL Handler</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">Node.js (Express)</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm">// Handle the redirect callback from CIP</span>
+app.<span class="fn">get</span>(<span class="str">'/kyc/callback'</span>, <span class="kw">async</span> (req, res) =&gt; {
+  <span class="kw">const</span> { session_id, status } = req.query;
+
+  <span class="cm">// Always verify status from CIP API (don't trust query params alone)</span>
+  <span class="kw">const</span> session = <span class="kw">await</span> <span class="fn">fetch</span>(
+    <span class="str">`https://api.cip.pk/api/v1/kyc-sessions/${session_id}`</span>,
+    { headers: { <span class="str">'Authorization'</span>: <span class="str">`Bearer ${CIP_TOKEN}`</span> } }
+  ).<span class="fn">then</span>(r =&gt; r.<span class="fn">json</span>());
+
+  <span class="kw">if</span> (session.kyc_status === <span class="str">'approved'</span>) {
+    <span class="cm">// Update your user record</span>
+    <span class="kw">await</span> <span class="fn">markUserVerified</span>(session.customer_id);
+    res.<span class="fn">redirect</span>(<span class="str">'/dashboard?kyc=success'</span>);
+  } <span class="kw">else</span> {
+    res.<span class="fn">redirect</span>(<span class="str">'/kyc-failed?reason='</span> + session.kyc_status);
+  }
+});</code></pre>
+      </div>
+
+      <!-- Configuration -->
+      <h2 id="configuration">Configuration</h2>
+
+      <h3>Callback URLs</h3>
+      <table>
+        <tr><th>Parameter</th><th>Usage</th><th>Example</th></tr>
+        <tr><td><code>web_callback_url</code></td><td>Browser redirect after completion</td><td><code>https://yourapp.com/kyc/callback</code></td></tr>
+        <tr><td><code>mobile_callback_url</code></td><td>Mobile deep link redirect</td><td><code>yourapp://kyc/callback</code></td></tr>
+      </table>
+      <p>CIP appends <code>?session_id=xxx&status=yyy</code> to your callback URL.</p>
+
+      <h3>Verification Level</h3>
+      <p>The verification level is configured at the tenant level in the CIP dashboard under <strong>Settings &gt; KYC</strong>. When <code>liveness_required</code> is enabled, all sessions use advanced verification (liveness + document-in-hand).</p>
+
+      <h3>Customer Data Fields</h3>
+      <p>Pre-filling customer data reduces verification time and improves accuracy:</p>
+      <ul>
+        <li><strong><code>customer_name</code></strong> &mdash; Matched against CNIC OCR data</li>
+        <li><strong><code>customer_cnic</code></strong> &mdash; Used for NADRA verification. If provided, the OCR-extracted CNIC is cross-referenced.</li>
+        <li><strong><code>customer_dob</code></strong> &mdash; Matched against document date of birth</li>
+        <li><strong><code>external_ref</code></strong> &mdash; Your internal user ID. Use this to link CIP customers to your user database. Included in webhook payloads.</li>
+      </ul>
+
+      <!-- Webhooks -->
+      <h2 id="webhooks">Webhook Events</h2>
+
+      <table>
+        <tr><th>Event</th><th>Trigger</th><th>Data</th></tr>
+        <tr><td><code>kyc.session.completed</code></td><td>Session finished (any result)</td><td>session_id, status, kyc_status, risk_tier, customer_id, external_ref</td></tr>
+        <tr><td><code>kyc.session.approved</code></td><td>Identity verified</td><td>session_id, customer_id, risk_tier, external_ref</td></tr>
+        <tr><td><code>kyc.session.rejected</code></td><td>Verification failed</td><td>session_id, kyc_status, rejection_reason, external_ref</td></tr>
+        <tr><td><code>kyc.session.expired</code></td><td>Session timed out</td><td>session_id, external_ref</td></tr>
+        <tr><td><code>test.ping</code></td><td>Manual test from dashboard</td><td>message, tenantId</td></tr>
+      </table>
+
+      <div class="info-box warning">
+        <h4>Important</h4>
+        <p>Always verify the webhook signature and confirm session status via the API before taking action. Do not rely solely on webhook data for critical decisions like account activation.</p>
+      </div>
+
+      <!-- Error Handling -->
+      <h2 id="error-handling">Error Handling</h2>
+
+      <table>
+        <tr><th>HTTP Code</th><th>Error</th><th>Description</th></tr>
+        <tr><td>400</td><td>Validation Error</td><td>Invalid request body (missing fields, wrong format)</td></tr>
+        <tr><td>401</td><td>Unauthorized</td><td>Invalid or expired JWT token</td></tr>
+        <tr><td>403</td><td>Forbidden</td><td>Platform admin trying to use tenant endpoint</td></tr>
+        <tr><td>404</td><td>Not Found</td><td>Session ID not found or belongs to different tenant</td></tr>
+        <tr><td>409</td><td>Conflict</td><td>Session already completed or expired</td></tr>
+        <tr><td>429</td><td>Rate Limited</td><td>Too many requests. Retry with exponential backoff.</td></tr>
+        <tr><td>500</td><td>Server Error</td><td>Internal error. Contact CIP support.</td></tr>
+      </table>
+
+      <!-- Testing -->
+      <h2 id="testing">Testing</h2>
+
+      <div class="info-box tip">
+        <h4>Sandbox Environment</h4>
+        <ul>
+          <li>Use the sandbox API base URL: <code>https://sandbox.api.cip.pk</code></li>
+          <li>Sandbox sessions auto-approve after completing all steps</li>
+          <li>Use test CNIC number <code>42101-0000000-0</code> for consistent results</li>
+          <li>Webhook test endpoint: <code>POST /api/v1/tenants/me/webhooks/test</code></li>
+        </ul>
+      </div>
+
+      <h3>Quick Test with cURL</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm"># Create a KYC session</span>
+curl -X POST https://api.cip.pk/api/v1/kyc-sessions \
+  -H <span class="str">"Authorization: Bearer YOUR_JWT_TOKEN"</span> \
+  -H <span class="str">"Content-Type: application/json"</span> \
+  -d <span class="str">'{
+    "external_ref": "test-user-001",
+    "customer_name": "Test User",
+    "web_callback_url": "https://yourapp.com/kyc/callback"
+  }'</span>
+
+<span class="cm"># Check session status</span>
+curl https://api.cip.pk/api/v1/kyc-sessions/SESSION_ID \
+  -H <span class="str">"Authorization: Bearer YOUR_JWT_TOKEN"</span></code></pre>
+      </div>
+
+    </div>
+
+    <footer class="footer">
+      <div><span class="footer-brand">CIP <span>Compliance Infrastructure Platform</span></span></div>
+      <div>Built for Pakistan's Virtual Assets Act 2026</div>
+    </footer>
+  </div>
+</div>
+
+<script>
+function copyCode(btn) {
+  const code = btn.closest('.code-block').querySelector('code');
+  const text = code.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.style.color = '#00A651';
+    btn.style.borderColor = '#00A651';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>

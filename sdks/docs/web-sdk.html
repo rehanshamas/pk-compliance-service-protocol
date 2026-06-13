@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web SDK Integration - CIP Docs</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0A0A0C; --bg-card: #111114; --bg-code: #141416; --bg-sidebar: #0D0D10;
+    --text: #F5F5F5; --text-muted: #9CA3AF; --accent: #F28A17; --accent-dim: rgba(242,138,23,0.15);
+    --border: #1E1E24; --green: #00A651; --red: #EF4444; --radius: 12px;
+    --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    --font-mono: 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Consolas, monospace;
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.7; font-size: 15px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { opacity: 0.85; text-decoration: underline; }
+  .page { display: flex; min-height: 100vh; }
+  .sidebar { position: fixed; top: 0; left: 0; bottom: 0; width: 260px; background: var(--bg-sidebar); border-right: 1px solid var(--border); padding: 24px 0; overflow-y: auto; z-index: 100; }
+  .sidebar-logo { padding: 0 24px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .sidebar-logo h2 { font-size: 18px; font-weight: 800; }
+  .sidebar-logo h2 span { color: var(--accent); }
+  .sidebar-logo p { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .sidebar nav { padding: 0 12px; }
+  .sidebar nav a { display: block; padding: 8px 12px; border-radius: 8px; font-size: 13px; color: var(--text-muted); transition: all 0.15s; margin-bottom: 2px; }
+  .sidebar nav a:hover, .sidebar nav a.active { background: var(--accent-dim); color: var(--accent); text-decoration: none; }
+  .sidebar nav .nav-section { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 16px 12px 6px; font-weight: 700; }
+  .main { margin-left: 260px; flex: 1; }
+  .content { max-width: 900px; padding: 48px; }
+  .content h1 { font-size: 34px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+  .content h1 span { color: var(--accent); }
+  .content .subtitle { font-size: 16px; color: var(--text-muted); margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+  .content h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; margin-top: 48px; }
+  .content h2:first-of-type { margin-top: 0; }
+  .content h3 { font-size: 17px; font-weight: 700; margin-top: 28px; margin-bottom: 8px; }
+  .content h4 { font-size: 14px; font-weight: 700; margin-top: 20px; margin-bottom: 6px; color: var(--accent); }
+  .content p { color: var(--text-muted); margin-bottom: 16px; }
+  .content ul, .content ol { color: var(--text-muted); padding-left: 24px; margin-bottom: 16px; }
+  .content li { margin-bottom: 6px; }
+  .content li strong { color: var(--text); }
+  .content code { font-family: var(--font-mono); background: var(--bg-code); padding: 2px 7px; border-radius: 4px; font-size: 13px; color: var(--accent); }
+  .code-block { position: relative; margin: 16px 0 24px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+  .code-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: #1a1a1e; border-bottom: 1px solid var(--border); }
+  .code-lang { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
+  .copy-btn { background: none; border: 1px solid var(--border); color: var(--text-muted); padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: all 0.15s; font-family: var(--font); }
+  .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .code-block pre { background: var(--bg-code); padding: 16px; overflow-x: auto; margin: 0; }
+  .code-block pre code { background: none; padding: 0; font-size: 13px; line-height: 1.6; color: var(--text-muted); }
+  .code-block pre code .kw { color: #C678DD; }
+  .code-block pre code .str { color: #98C379; }
+  .code-block pre code .cm { color: #5C6370; font-style: italic; }
+  .code-block pre code .fn { color: #61AFEF; }
+  .code-block pre code .num { color: #D19A66; }
+  .code-block pre code .key { color: #E06C75; }
+  .info-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin: 20px 0; }
+  .info-box.tip { border-left: 3px solid var(--green); }
+  .info-box.warning { border-left: 3px solid #EAB308; }
+  .info-box.danger { border-left: 3px solid var(--red); }
+  .info-box h4 { margin-top: 0; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .info-box.tip h4 { color: var(--green); }
+  .info-box.warning h4 { color: #EAB308; }
+  .info-box.danger h4 { color: var(--red); }
+  .info-box p, .info-box ul { font-size: 13px; margin-bottom: 0; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
+  th { text-align: left; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border); font-weight: 700; color: var(--text); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 10px 14px; border: 1px solid var(--border); color: var(--text-muted); vertical-align: top; }
+  td code { font-size: 12px; }
+  tr:hover td { background: rgba(242,138,23,0.03); }
+
+  /* Branding preview */
+  .brand-preview { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin: 20px 0; }
+  .brand-preview-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .brand-preview-logo { width: 32px; height: 32px; border-radius: 8px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #000; }
+  .brand-preview-title { font-size: 15px; font-weight: 700; }
+  .brand-preview-body { display: flex; gap: 16px; }
+  .brand-preview-swatch { text-align: center; }
+  .brand-preview-swatch .swatch { width: 48px; height: 48px; border-radius: 8px; margin-bottom: 6px; border: 1px solid var(--border); }
+  .brand-preview-swatch .label { font-size: 10px; color: var(--text-muted); }
+
+  .footer { border-top: 1px solid var(--border); padding: 32px 48px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-muted); }
+  .footer-brand { font-weight: 700; color: var(--text); }
+  .footer-brand span { color: var(--accent); }
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .content { padding: 24px; }
+    .footer { flex-direction: column; gap: 8px; padding: 24px; }
+    table { display: block; overflow-x: auto; }
+  }
+  .mobile-nav { display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 200; background: var(--bg-sidebar); border-bottom: 1px solid var(--border); padding: 12px 16px; }
+  .mobile-nav button { background: none; border: none; color: var(--text); font-size: 24px; cursor: pointer; }
+  @media (max-width: 768px) {
+    .mobile-nav { display: flex; justify-content: space-between; align-items: center; }
+    .mobile-nav .brand { font-size: 15px; font-weight: 800; }
+    .mobile-nav .brand span { color: var(--accent); }
+    .sidebar.open { display: block; z-index: 300; width: 100%; }
+    .content { padding-top: 72px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="mobile-nav">
+  <div class="brand">CIP <span>Docs</span></div>
+  <button onclick="document.querySelector('.sidebar').classList.toggle('open')">&#9776;</button>
+</div>
+
+<div class="page">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h2>CIP <span>Docs</span></h2>
+      <p>Integration Guide v1.0</p>
+    </div>
+    <nav>
+      <div class="nav-section">Getting Started</div>
+      <a href="index.html">Overview</a>
+
+      <div class="nav-section">Integration Methods</div>
+      <a href="webview.html">WebView / Redirect</a>
+      <a href="web-sdk.html" class="active">Web SDK</a>
+      <a href="react-native.html">React Native SDK</a>
+
+      <div class="nav-section">This Page</div>
+      <a href="#installation">Installation</a>
+      <a href="#quick-start">Quick Start</a>
+      <a href="#configuration">Configuration</a>
+      <a href="#branding">Branding</a>
+      <a href="#localization">Localization</a>
+      <a href="#events">Events / Callbacks</a>
+      <a href="#step-by-step">Step-by-Step</a>
+      <a href="#advanced">Advanced Usage</a>
+      <a href="#class-reference">Class Reference</a>
+      <a href="#troubleshooting">Troubleshooting</a>
+
+      <div class="nav-section">Reference</div>
+      <a href="api-reference.html">API Reference</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <div class="content">
+      <h1>Web <span>SDK</span> Integration</h1>
+      <p class="subtitle">Embed KYC directly in your web app &mdash; no redirects. Full control over branding and UX.</p>
+
+      <!-- Installation -->
+      <h2 id="installation">Installation</h2>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">npm</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>npm install @cip/kyc-web-sdk</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">yarn</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>yarn add @cip/kyc-web-sdk</code></pre>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">CDN</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>&lt;script src=<span class="str">"https://cdn.cip.pk/sdk/kyc-web/latest/cip-kyc.min.js"</span>&gt;&lt;/script&gt;</code></pre>
+      </div>
+
+      <!-- Quick Start -->
+      <h2 id="quick-start">Quick Start</h2>
+      <p>Get KYC running in 5 lines of code:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">TypeScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="kw">import</span> { CipKyc } <span class="kw">from</span> <span class="str">'@cip/kyc-web-sdk'</span>;
+
+<span class="kw">const</span> kyc = <span class="kw">new</span> <span class="fn">CipKyc</span>({
+  apiKey: <span class="str">'cip_live_your_api_key'</span>,
+  sessionId: <span class="str">'session-id-from-your-backend'</span>,
+  onComplete: (result) =&gt; console.<span class="fn">log</span>(<span class="str">'KYC done:'</span>, result),
+  onError: (err) =&gt; console.<span class="fn">error</span>(<span class="str">'KYC error:'</span>, err),
+});
+
+<span class="kw">await</span> kyc.<span class="fn">start</span>();</code></pre>
+      </div>
+
+      <p>That is all you need. The SDK creates a fullscreen overlay, walks the user through document capture and selfie, and fires <code>onComplete</code> when done.</p>
+
+      <!-- Configuration -->
+      <h2 id="configuration">Full Configuration Reference</h2>
+      <p>Every property of <code>CipKycConfig</code> with types and defaults:</p>
+
+      <table>
+        <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        <tr><td><code>apiKey</code></td><td><code>string</code></td><td><em>required</em></td><td>API key issued by CIP for your VASP. Get this from Settings &gt; API Keys.</td></tr>
+        <tr><td><code>sessionId</code></td><td><code>string</code></td><td><em>required</em></td><td>KYC session ID obtained from your backend via <code>POST /api/v1/kyc-sessions</code>.</td></tr>
+        <tr><td><code>apiBaseUrl</code></td><td><code>string</code></td><td><code>'https://api.cip.app'</code></td><td>CIP backend base URL. Override for sandbox or self-hosted environments.</td></tr>
+        <tr><td><code>containerId</code></td><td><code>string</code></td><td><code>undefined</code></td><td>DOM element ID to mount into. If omitted, creates a fullscreen overlay.</td></tr>
+        <tr><td><code>verificationLevel</code></td><td><code>'basic' | 'advanced'</code></td><td><code>'basic'</code></td><td>Verification level. Server-provided value takes precedence if available.</td></tr>
+        <tr><td><code>branding</code></td><td><code>CipBranding</code></td><td>CIP defaults</td><td>Visual branding overrides. See Branding section below.</td></tr>
+        <tr><td><code>locale</code></td><td><code>string</code></td><td><code>'en'</code></td><td>Locale code for built-in strings.</td></tr>
+        <tr><td><code>strings</code></td><td><code>Record&lt;string, string&gt;</code></td><td><code>{}</code></td><td>Custom string overrides keyed by string ID. See Localization section.</td></tr>
+        <tr><td><code>onComplete</code></td><td><code>(result: CipKycResult) =&gt; void</code></td><td><code>undefined</code></td><td>Fired when the entire verification flow completes.</td></tr>
+        <tr><td><code>onStepComplete</code></td><td><code>(step: string, data: any) =&gt; void</code></td><td><code>undefined</code></td><td>Fired after each individual step completes.</td></tr>
+        <tr><td><code>onError</code></td><td><code>(error: CipKycError) =&gt; void</code></td><td><code>undefined</code></td><td>Fired on any error during verification.</td></tr>
+        <tr><td><code>onCancel</code></td><td><code>() =&gt; void</code></td><td><code>undefined</code></td><td>Fired when the user cancels the flow.</td></tr>
+      </table>
+
+      <!-- Branding -->
+      <h2 id="branding">Branding Customization</h2>
+      <p>Customize the SDK appearance to match your brand:</p>
+
+      <table>
+        <tr><th>Property</th><th>Type</th><th>Default</th><th>Description</th></tr>
+        <tr><td><code>primaryColor</code></td><td><code>string</code></td><td><code>'#F28A17'</code></td><td>Primary accent color for buttons, progress indicators, and highlights.</td></tr>
+        <tr><td><code>backgroundColor</code></td><td><code>string</code></td><td><code>'#0A0A0C'</code></td><td>Background color for the SDK container.</td></tr>
+        <tr><td><code>textColor</code></td><td><code>string</code></td><td><code>'#F5F5F5'</code></td><td>Primary text color.</td></tr>
+        <tr><td><code>logo</code></td><td><code>string</code></td><td><code>''</code></td><td>URL to your company logo. Displayed in the SDK header.</td></tr>
+        <tr><td><code>companyName</code></td><td><code>string</code></td><td><code>'CIP'</code></td><td>Your company name, shown in the header alongside the logo.</td></tr>
+        <tr><td><code>fontFamily</code></td><td><code>string</code></td><td>System font stack</td><td>CSS font-family value.</td></tr>
+        <tr><td><code>borderRadius</code></td><td><code>string</code></td><td><code>'12px'</code></td><td>Border radius for cards and buttons (CSS value).</td></tr>
+      </table>
+
+      <h3>Branding Example</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">TypeScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="kw">const</span> kyc = <span class="kw">new</span> <span class="fn">CipKyc</span>({
+  apiKey: <span class="str">'cip_live_...'</span>,
+  sessionId: <span class="str">'...'</span>,
+  branding: {
+    primaryColor: <span class="str">'#2563EB'</span>,       <span class="cm">// Your brand blue</span>
+    backgroundColor: <span class="str">'#0F172A'</span>,   <span class="cm">// Dark navy</span>
+    textColor: <span class="str">'#F8FAFC'</span>,          <span class="cm">// Near-white</span>
+    logo: <span class="str">'https://yourapp.com/logo.svg'</span>,
+    companyName: <span class="str">'YourExchange'</span>,
+    fontFamily: <span class="str">"'Inter', sans-serif"</span>,
+    borderRadius: <span class="str">'8px'</span>,
+  },
+  onComplete: (result) =&gt; { <span class="cm">/* ... */</span> },
+});</code></pre>
+      </div>
+
+      <h3>Visual Preview</h3>
+      <div class="brand-preview">
+        <div class="brand-preview-header">
+          <div class="brand-preview-logo">C</div>
+          <div>
+            <div class="brand-preview-title">Identity Verification</div>
+            <div style="font-size:11px;color:var(--text-muted);">Powered by CIP</div>
+          </div>
+        </div>
+        <div class="brand-preview-body">
+          <div class="brand-preview-swatch">
+            <div class="swatch" style="background:#F28A17;"></div>
+            <div class="label">primaryColor</div>
+          </div>
+          <div class="brand-preview-swatch">
+            <div class="swatch" style="background:#0A0A0C;"></div>
+            <div class="label">backgroundColor</div>
+          </div>
+          <div class="brand-preview-swatch">
+            <div class="swatch" style="background:#F5F5F5;"></div>
+            <div class="label">textColor</div>
+          </div>
+          <div class="brand-preview-swatch">
+            <div class="swatch" style="background:#141416; border-radius:8px;"></div>
+            <div class="label">borderRadius: 8px</div>
+          </div>
+        </div>
+      </div>
+
+      <h3>CSS Custom Properties</h3>
+      <p>The SDK injects CSS custom properties that you can use for additional styling:</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">CSS</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm">/* These are set automatically by the SDK */</span>
+<span class="key">--cip-primary</span>: #F28A17;
+<span class="key">--cip-bg</span>: #0A0A0C;
+<span class="key">--cip-text</span>: #F5F5F5;
+<span class="key">--cip-radius</span>: 12px;
+<span class="key">--cip-font</span>: -apple-system, BlinkMacSystemFont, ...;
+
+<span class="cm">/* Override in your stylesheet */</span>
+.<span class="fn">cip-kyc-container</span> {
+  <span class="key">--cip-primary</span>: <span class="str">#2563EB</span>;
+}</code></pre>
+      </div>
+
+      <!-- Localization -->
+      <h2 id="localization">Localization</h2>
+      <p>Override any UI string by providing a <code>strings</code> map:</p>
+
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">TypeScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="kw">const</span> kyc = <span class="kw">new</span> <span class="fn">CipKyc</span>({
+  apiKey: <span class="str">'...'</span>,
+  sessionId: <span class="str">'...'</span>,
+  strings: {
+    <span class="str">'header.title'</span>: <span class="str">'Verify Your Identity'</span>,
+    <span class="str">'doc.front.instruction'</span>: <span class="str">'Place your CNIC face-up in the frame'</span>,
+    <span class="str">'doc.back.instruction'</span>: <span class="str">'Flip your CNIC and capture the back'</span>,
+    <span class="str">'selfie.instruction'</span>: <span class="str">'Look at the camera'</span>,
+    <span class="str">'capture.button'</span>: <span class="str">'Take Photo'</span>,
+    <span class="str">'result.complete.approved'</span>: <span class="str">'You are verified! Welcome aboard.'</span>,
+  },
+});</code></pre>
+      </div>
+
+      <h3>All Available String Keys</h3>
+      <table>
+        <tr><th>Key</th><th>Default</th></tr>
+        <tr><td><code>header.title</code></td><td>Identity Verification</td></tr>
+        <tr><td><code>step.document</code></td><td>Document</td></tr>
+        <tr><td><code>step.selfie</code></td><td>Selfie</td></tr>
+        <tr><td><code>step.liveness</code></td><td>Liveness</td></tr>
+        <tr><td><code>step.doc_in_hand</code></td><td>Doc-in-Hand</td></tr>
+        <tr><td><code>step.complete</code></td><td>Complete</td></tr>
+        <tr><td><code>doc.front.instruction</code></td><td>Position the front of your CNIC within the frame</td></tr>
+        <tr><td><code>doc.back.instruction</code></td><td>Now flip your CNIC and capture the back</td></tr>
+        <tr><td><code>selfie.instruction</code></td><td>Position your face within the oval</td></tr>
+        <tr><td><code>liveness.blink</code></td><td>Blink your eyes naturally</td></tr>
+        <tr><td><code>liveness.turn</code></td><td>Turn your head slowly to the left</td></tr>
+        <tr><td><code>liveness.processing</code></td><td>Verifying liveness...</td></tr>
+        <tr><td><code>doc_in_hand.instruction</code></td><td>Hold your CNIC next to your face</td></tr>
+        <tr><td><code>capture.button</code></td><td>Capture</td></tr>
+        <tr><td><code>capture.retake</code></td><td>Retake</td></tr>
+        <tr><td><code>capture.continue</code></td><td>Continue</td></tr>
+        <tr><td><code>capture.retry</code></td><td>Retry</td></tr>
+        <tr><td><code>result.success</code></td><td>Step completed successfully</td></tr>
+        <tr><td><code>result.fail</code></td><td>Verification failed</td></tr>
+        <tr><td><code>result.complete.title</code></td><td>Verification Complete</td></tr>
+        <tr><td><code>result.complete.approved</code></td><td>Your identity has been verified.</td></tr>
+        <tr><td><code>result.complete.pending</code></td><td>Your verification is being reviewed.</td></tr>
+        <tr><td><code>result.complete.rejected</code></td><td>Verification could not be completed.</td></tr>
+        <tr><td><code>error.camera.denied</code></td><td>Camera access was denied. Please allow camera access and try again.</td></tr>
+        <tr><td><code>error.camera.unavailable</code></td><td>No camera found on this device.</td></tr>
+        <tr><td><code>error.network</code></td><td>Network error. Please check your connection and try again.</td></tr>
+        <tr><td><code>cancel.confirm</code></td><td>Are you sure you want to cancel verification?</td></tr>
+      </table>
+
+      <!-- Events -->
+      <h2 id="events">Events / Callbacks</h2>
+
+      <h3><code>onComplete(result: CipKycResult)</code></h3>
+      <p>Fired when the entire verification flow completes (all steps done). The SDK auto-destroys after this.</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">TypeScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm">// CipKycResult shape</span>
+{
+  sessionId: <span class="str">"a1b2c3d4-..."</span>,
+  status: <span class="str">"approved"</span> | <span class="str">"rejected"</span> | <span class="str">"pending"</span>,
+  kycStatus: <span class="str">"approved"</span>,      <span class="cm">// raw status from server</span>
+  riskTier: <span class="str">"low"</span>,             <span class="cm">// "low" | "medium" | "high"</span>
+  customerId: <span class="str">"cust-..."</span>,      <span class="cm">// CIP customer ID or null</span>
+  data: {
+    fullName: <span class="str">"Ahmed Khan"</span>,
+    cnicNumber: <span class="str">"42101-1234567-8"</span>,
+    dateOfBirth: <span class="str">"1995-03-15"</span>,
+    gender: <span class="str">"male"</span>,
+    address: <span class="str">"House 12, Street 5, Islamabad"</span>,
+    faceMatchScore: <span class="num">0.97</span>,
+    livenessScore: <span class="num">0.99</span>,       <span class="cm">// only for advanced verification</span>
+  }
+}</code></pre>
+      </div>
+
+      <h3><code>onStepComplete(step: string, data: any)</code></h3>
+      <p>Fired after each individual step. Use this for progress tracking.</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">TypeScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm">// Step names: "document_front", "document_back", "selfie", "liveness", "document_in_hand"</span>
+
+onStepComplete: (step, data) =&gt; {
+  console.<span class="fn">log</span>(<span class="str">`Step ${step} done`</span>, data);
+
+  <span class="cm">// data shape for document steps:</span>
+  <span class="cm">// { passed: true, data: { ocrName: "...", ocrCnic: "..." }, quality: { score: 0.95, issues: [] } }</span>
+
+  <span class="cm">// data shape for selfie step:</span>
+  <span class="cm">// { passed: true, data: { faceMatchScore: 0.97 }, quality: { score: 0.92, issues: [] } }</span>
+
+  <span class="cm">// data shape for liveness step:</span>
+  <span class="cm">// { passed: true, data: { livenessScore: 0.99, blinkDetected: true, headTurnDetected: true } }</span>
+}</code></pre>
+      </div>
+
+      <h3><code>onError(error: CipKycError)</code></h3>
+      <p>Fired on any error. The SDK shows a retry/cancel UI automatically.</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">TypeScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm">// CipKycError shape</span>
+{
+  code: <span class="str">"CAMERA_DENIED"</span>,           <span class="cm">// error code</span>
+  message: <span class="str">"Camera access denied"</span>,  <span class="cm">// human-readable message</span>
+  step: <span class="str">"selfie"</span>                    <span class="cm">// which step failed (optional)</span>
+}
+
+<span class="cm">// Common error codes:</span>
+<span class="cm">// CAMERA_DENIED       - User denied camera permission</span>
+<span class="cm">// CAMERA_UNAVAILABLE  - No camera found</span>
+<span class="cm">// NETWORK_ERROR       - API request failed</span>
+<span class="cm">// SESSION_EXPIRED     - Session timed out</span>
+<span class="cm">// UNKNOWN_STEP        - Internal SDK error</span>
+<span class="cm">// UNKNOWN_ERROR       - Unexpected error</span></code></pre>
+      </div>
+
+      <h3><code>onCancel()</code></h3>
+      <p>Fired when the user confirms cancellation. The SDK auto-destroys.</p>
+
+      <!-- Step by step -->
+      <h2 id="step-by-step">Step-by-Step Integration</h2>
+
+      <h3>1. Install the SDK</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">Shell</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code>npm install @cip/kyc-web-sdk</code></pre>
+      </div>
+
+      <h3>2. Create a session on your backend</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">Node.js</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm">// Express route: POST /api/kyc/start</span>
+app.<span class="fn">post</span>(<span class="str">'/api/kyc/start'</span>, <span class="kw">async</span> (req, res) =&gt; {
+  <span class="kw">const</span> response = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'https://api.cip.pk/api/v1/kyc-sessions'</span>, {
+    method: <span class="str">'POST'</span>,
+    headers: {
+      <span class="str">'Authorization'</span>: <span class="str">`Bearer ${process.env.CIP_TOKEN}`</span>,
+      <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span>,
+    },
+    body: JSON.<span class="fn">stringify</span>({
+      external_ref: req.user.id,
+      customer_name: req.user.name,
+      customer_cnic: req.user.cnic,
+    }),
+  });
+  <span class="kw">const</span> session = <span class="kw">await</span> response.<span class="fn">json</span>();
+  res.<span class="fn">json</span>({ sessionId: session.session_id });
+});</code></pre>
+      </div>
+
+      <h3>3. Pass session ID to SDK and start</h3>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">TypeScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="kw">import</span> { CipKyc } <span class="kw">from</span> <span class="str">'@cip/kyc-web-sdk'</span>;
+
+<span class="kw">async function</span> <span class="fn">startKyc</span>() {
+  <span class="cm">// 1. Get session from YOUR backend</span>
+  <span class="kw">const</span> res = <span class="kw">await</span> <span class="fn">fetch</span>(<span class="str">'/api/kyc/start'</span>, { method: <span class="str">'POST'</span> });
+  <span class="kw">const</span> { sessionId } = <span class="kw">await</span> res.<span class="fn">json</span>();
+
+  <span class="cm">// 2. Create and start the SDK</span>
+  <span class="kw">const</span> kyc = <span class="kw">new</span> <span class="fn">CipKyc</span>({
+    apiKey: <span class="str">'cip_live_your_key'</span>,
+    sessionId,
+    onComplete: (result) =&gt; {
+      <span class="kw">if</span> (result.status === <span class="str">'approved'</span>) {
+        <span class="fn">showSuccess</span>(<span class="str">'Identity verified!'</span>);
+        <span class="fn">refreshUserProfile</span>();
+      } <span class="kw">else</span> {
+        <span class="fn">showMessage</span>(<span class="str">'Verification is '</span> + result.status);
+      }
+    },
+    onError: (err) =&gt; console.<span class="fn">error</span>(<span class="str">'KYC error:'</span>, err),
+    onCancel: () =&gt; console.<span class="fn">log</span>(<span class="str">'User cancelled KYC'</span>),
+  });
+
+  <span class="kw">await</span> kyc.<span class="fn">start</span>();
+}</code></pre>
+      </div>
+
+      <h3>4. Handle completion</h3>
+      <p>When <code>onComplete</code> fires, the SDK has already cleaned up its UI. Use the result to update your application state. Always verify the result server-side by calling <code>GET /api/v1/kyc-sessions/{session_id}</code> from your backend.</p>
+
+      <!-- Advanced -->
+      <h2 id="advanced">Advanced Usage</h2>
+
+      <h3>Mounting into a Specific Container</h3>
+      <p>Instead of a fullscreen overlay, mount the SDK into a specific DOM element:</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">HTML + TypeScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm">&lt;!-- Your page --&gt;</span>
+&lt;div id=<span class="str">"kyc-container"</span> style=<span class="str">"width: 100%; max-width: 600px; height: 700px;"</span>&gt;&lt;/div&gt;
+
+&lt;script&gt;
+<span class="kw">const</span> kyc = <span class="kw">new</span> <span class="fn">CipKyc</span>({
+  apiKey: <span class="str">'cip_live_...'</span>,
+  sessionId: <span class="str">'...'</span>,
+  containerId: <span class="str">'kyc-container'</span>,  <span class="cm">// Mount here instead of overlay</span>
+  onComplete: (result) =&gt; { <span class="cm">/* ... */</span> },
+});
+kyc.<span class="fn">start</span>();
+&lt;/script&gt;</code></pre>
+      </div>
+
+      <h3>Destroying / Cleaning Up</h3>
+      <p>If you need to remove the SDK before the user completes (e.g., navigating away):</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">TypeScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm">// Manual cleanup</span>
+kyc.<span class="fn">destroy</span>();
+
+<span class="cm">// In React, clean up on unmount:</span>
+<span class="fn">useEffect</span>(() =&gt; {
+  <span class="kw">const</span> kyc = <span class="kw">new</span> <span class="fn">CipKyc</span>({ <span class="cm">/* config */</span> });
+  kyc.<span class="fn">start</span>();
+  <span class="kw">return</span> () =&gt; kyc.<span class="fn">destroy</span>();
+}, []);</code></pre>
+      </div>
+
+      <div class="info-box warning">
+        <h4>Important</h4>
+        <p>After calling <code>destroy()</code>, the instance cannot be reused. Create a new <code>CipKyc</code> instance if you need to start again.</p>
+      </div>
+
+      <h3>Session Resumption</h3>
+      <p>If a user closes the page mid-verification, you can resume by creating a new SDK instance with the same <code>sessionId</code>. The SDK automatically skips already-completed steps.</p>
+      <div class="code-block">
+        <div class="code-header">
+          <span class="code-lang">TypeScript</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <pre><code><span class="cm">// Resume an existing session</span>
+<span class="kw">const</span> kyc = <span class="kw">new</span> <span class="fn">CipKyc</span>({
+  apiKey: <span class="str">'cip_live_...'</span>,
+  sessionId: existingSessionId, <span class="cm">// Same session ID</span>
+  onComplete: (result) =&gt; { <span class="cm">/* ... */</span> },
+});
+<span class="kw">await</span> kyc.<span class="fn">start</span>(); <span class="cm">// Will skip completed steps automatically</span></code></pre>
+      </div>
+
+      <!-- Class Reference -->
+      <h2 id="class-reference">Class Reference: <code>CipKyc</code></h2>
+
+      <table>
+        <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+        <tr><td><code>constructor(config: CipKycConfig)</code></td><td><code>CipKyc</code></td><td>Create a new SDK instance. Throws if <code>apiKey</code> or <code>sessionId</code> is missing.</td></tr>
+        <tr><td><code>start()</code></td><td><code>Promise&lt;void&gt;</code></td><td>Initialize UI, fetch session info, begin verification. Call this after construction.</td></tr>
+        <tr><td><code>destroy()</code></td><td><code>void</code></td><td>Stop camera, remove DOM elements, clean up. Instance cannot be reused after this.</td></tr>
+      </table>
+
+      <!-- Troubleshooting -->
+      <h2 id="troubleshooting">Troubleshooting</h2>
+
+      <h3>Camera not working</h3>
+      <ul>
+        <li>Ensure the page is served over <strong>HTTPS</strong>. Browsers block camera access on HTTP (except localhost).</li>
+        <li>Check browser permissions: the user must allow camera access when prompted.</li>
+        <li>On mobile browsers, ensure no other app is using the camera.</li>
+      </ul>
+
+      <h3>CORS errors</h3>
+      <ul>
+        <li>The CIP API allows requests from any origin with a valid API key.</li>
+        <li>If using a custom <code>apiBaseUrl</code>, ensure CORS headers are configured on your proxy.</li>
+        <li>Do not call the CIP API directly from the browser without the SDK &mdash; use the SDK which handles auth correctly.</li>
+      </ul>
+
+      <h3>WebView compatibility</h3>
+      <ul>
+        <li>If embedding in a WebView (iOS/Android), ensure <code>javaScriptEnabled</code> and <code>allowsInlineMediaPlayback</code> are set.</li>
+        <li>On iOS, add <code>NSCameraUsageDescription</code> to Info.plist.</li>
+        <li>On Android, add <code>CAMERA</code> permission to AndroidManifest.xml.</li>
+      </ul>
+
+      <h3>SDK not loading</h3>
+      <ul>
+        <li>Verify the <code>apiKey</code> is valid and not revoked.</li>
+        <li>Check the <code>sessionId</code> is correct and the session has not expired.</li>
+        <li>Check the browser console for error messages.</li>
+        <li>Ensure the SDK package version is up to date.</li>
+      </ul>
+
+    </div>
+
+    <footer class="footer">
+      <div><span class="footer-brand">CIP <span>Compliance Infrastructure Platform</span></span></div>
+      <div>Built for Pakistan's Virtual Assets Act 2026</div>
+    </footer>
+  </div>
+</div>
+
+<script>
+function copyCode(btn) {
+  const code = btn.closest('.code-block').querySelector('code');
+  navigator.clipboard.writeText(code.textContent).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.style.color = '#00A651';
+    btn.style.borderColor = '#00A651';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>
