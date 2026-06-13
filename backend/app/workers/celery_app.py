@@ -15,6 +15,7 @@ app = Celery(
         "app.workers.tasks.ongoing_monitoring",
         "app.workers.tasks.webhooks",
         "app.workers.tasks.backup",
+        "app.workers.tasks.wallet_monitoring",
     ],
 )
 
@@ -39,6 +40,10 @@ app.conf.update(
         "daily-backup": {
             "task": "tasks.daily_backup",
             "schedule": crontab(hour=2, minute=0),  # Daily at 2 AM UTC
+        },
+        "rescore-monitored-wallets": {
+            "task": "rescore_monitored_wallets",
+            "schedule": 1800.0,  # Every 30 minutes
         },
     },
 )

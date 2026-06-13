@@ -13,6 +13,7 @@ class CustomerCreate(BaseModel):
     dob: str | None = Field(None, max_length=50, description="Date of birth (YYYY-MM-DD or partial)")
     nationality: str | None = Field(None, max_length=100)
     cnic_number: str | None = Field(None, max_length=20, description="Pakistan CNIC (35201-1234567-1)")
+    phone: str | None = Field(None, max_length=20, description="Phone number")
     business_purpose: str | None = Field(None, max_length=512, description="Nature and purpose of business relationship (Reg. 9.2(c))")
     expected_activity: str | None = Field(None, max_length=512, description="Expected transaction profile")
 
@@ -25,6 +26,7 @@ class CustomerUpdate(BaseModel):
     dob: str | None = Field(None, max_length=50)
     nationality: str | None = Field(None, max_length=100)
     cnic_number: str | None = Field(None, max_length=20)
+    phone: str | None = Field(None, max_length=20, description="Phone number")
     business_purpose: str | None = Field(None, max_length=512, description="Nature and purpose of business relationship (Reg. 9.2(c))")
     expected_activity: str | None = Field(None, max_length=512, description="Expected transaction profile")
     risk_tier: str | None = Field(None, pattern="^(low|medium|high|prohibited)$")
@@ -44,6 +46,7 @@ class CustomerResponse(BaseModel):
     dob: str | None
     nationality: str | None
     cnicNumber: str | None
+    phone: str | None = None
     businessPurpose: str | None = None
     expectedActivity: str | None = None
     riskTier: str

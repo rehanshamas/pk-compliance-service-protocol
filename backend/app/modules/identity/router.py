@@ -11,7 +11,7 @@ from app.core.exceptions import FeatureDisabledError
 from app.database import get_db
 from app.models.tenant import User, UserRole
 from app.core.exceptions import NotFoundError, AuthorizationError
-from app.modules.identity.models import FreezeRecord, KycStatus
+from app.modules.identity.models import Customer, FreezeRecord, KycStatus
 from app.modules.identity.schemas import (
     CustomerCreate,
     CustomerDetail,
@@ -105,6 +105,7 @@ async def list_customers(
                 dob=c.dob.isoformat() if c.dob else None,
                 nationality=c.nationality,
                 cnicNumber=c.cnic_number,
+                phone=c.phone,
                 businessPurpose=c.business_purpose,
                 expectedActivity=c.expected_activity,
                 riskTier=c.risk_tier.value,
@@ -115,6 +116,41 @@ async def list_customers(
             for c in items
         ],
         total=total,
+    )
+
+
+@router.get("/by-ref/{external_ref}", response_model=CustomerDetail)
+async def get_customer_by_external_ref(
+    external_ref: str,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Lookup customer by external_ref. Tenant-isolated."""
+    tenant_id = _require_tenant(user)
+    result = await db.execute(
+        select(Customer).where(
+            Customer.tenant_id == tenant_id,
+            Customer.external_ref == external_ref,
+        )
+    )
+    customer = result.scalar_one_or_none()
+    if not customer:
+        raise NotFoundError("Customer not found")
+    return CustomerDetail(
+        id=str(customer.id),
+        tenantId=str(customer.tenant_id),
+        externalRef=customer.external_ref,
+        fullName=customer.full_name,
+        dob=customer.dob.isoformat() if customer.dob else None,
+        nationality=customer.nationality,
+        cnicNumber=customer.cnic_number,
+        phone=customer.phone,
+        businessPurpose=customer.business_purpose,
+        expectedActivity=customer.expected_activity,
+        riskTier=customer.risk_tier.value,
+        kycStatus=customer.kyc_status.value,
+        createdAt=customer.created_at.isoformat(),
+        updatedAt=customer.updated_at.isoformat(),
     )
 
 
@@ -137,6 +173,7 @@ async def get_customer(
         dob=customer.dob.isoformat() if customer.dob else None,
         nationality=customer.nationality,
         cnicNumber=customer.cnic_number,
+        phone=customer.phone,
         businessPurpose=customer.business_purpose,
         expectedActivity=customer.expected_activity,
         riskTier=customer.risk_tier.value,
@@ -259,6 +296,7 @@ async def run_kyc(
             dob=customer.dob.isoformat() if customer.dob else None,
             nationality=customer.nationality,
             cnicNumber=customer.cnic_number,
+            phone=customer.phone,
             riskTier=customer.risk_tier.value,
             kycStatus=customer.kyc_status.value,
             createdAt=customer.created_at.isoformat(),
@@ -288,6 +326,7 @@ async def score_risk(
         dob=customer.dob.isoformat() if customer.dob else None,
         nationality=customer.nationality,
         cnicNumber=customer.cnic_number,
+        phone=customer.phone,
         businessPurpose=customer.business_purpose,
         expectedActivity=customer.expected_activity,
         riskTier=customer.risk_tier.value,
@@ -392,6 +431,7 @@ async def approve_edd(
         dob=customer.dob.isoformat() if customer.dob else None,
         nationality=customer.nationality,
         cnicNumber=customer.cnic_number,
+        phone=customer.phone,
         businessPurpose=customer.business_purpose,
         expectedActivity=customer.expected_activity,
         riskTier=customer.risk_tier.value,
@@ -422,6 +462,7 @@ async def reject_edd(
         dob=customer.dob.isoformat() if customer.dob else None,
         nationality=customer.nationality,
         cnicNumber=customer.cnic_number,
+        phone=customer.phone,
         businessPurpose=customer.business_purpose,
         expectedActivity=customer.expected_activity,
         riskTier=customer.risk_tier.value,
@@ -454,6 +495,7 @@ async def create_customer(
         dob=dob_parsed,
         nationality=body.nationality,
         cnic_number=body.cnic_number,
+        phone=body.phone,
         business_purpose=body.business_purpose,
         expected_activity=body.expected_activity,
     )
@@ -465,6 +507,7 @@ async def create_customer(
         dob=customer.dob.isoformat() if customer.dob else None,
         nationality=customer.nationality,
         cnicNumber=customer.cnic_number,
+        phone=customer.phone,
         businessPurpose=customer.business_purpose,
         expectedActivity=customer.expected_activity,
         riskTier=customer.risk_tier.value,
@@ -506,6 +549,7 @@ async def update_customer(
         dob=customer.dob.isoformat() if customer.dob else None,
         nationality=customer.nationality,
         cnicNumber=customer.cnic_number,
+        phone=customer.phone,
         businessPurpose=customer.business_purpose,
         expectedActivity=customer.expected_activity,
         riskTier=customer.risk_tier.value,

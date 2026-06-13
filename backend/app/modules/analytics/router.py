@@ -12,6 +12,8 @@ from app.modules.analytics.schemas import (
     WalletDetailResponse,
     WalletListItem,
     WalletListResponse,
+    WalletRegisterRequest,
+    WalletRegisterResponse,
     WalletScoreRequest,
     WalletScoreResponse,
 )
@@ -25,6 +27,31 @@ def _require_tenant(user: User) -> UUID:
     if not user.tenant_id:
         raise FeatureDisabledError("Platform admins use admin endpoints.")
     return user.tenant_id
+
+
+@router.post("/register", response_model=WalletRegisterResponse)
+async def register_wallet(
+    body: WalletRegisterRequest,
+    db: AsyncSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """
+    Register a wallet address for ongoing monitoring.
+    CIP will periodically re-score this address and alert on risk changes.
+    """
+    tenant_id = _require_tenant(user)
+    tenant_flags = (user.tenant.feature_flags or {}) if user.tenant else {}
+    data = await analytics_service.register_wallet(
+        db,
+        tenant_id=tenant_id,
+        address=body.address,
+        chain=body.chain,
+        tenant_flags=tenant_flags,
+        customer_id=body.customer_id,
+        external_ref=body.external_ref,
+        label=body.label,
+    )
+    return WalletRegisterResponse(**data)
 
 
 @router.post("/score", response_model=WalletScoreResponse)

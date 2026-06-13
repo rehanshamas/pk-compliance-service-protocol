@@ -91,7 +91,7 @@ async def list_cases(
     )
     out = []
     for c in items:
-        count = case_service._linked_alerts_count(c)
+        count = await case_service._linked_alerts_count(db, c)
         out.append(_case_to_response(c, count))
     return CaseListResponse(items=out, total=total)
 
@@ -105,7 +105,7 @@ async def get_case(
     """Get single case with notes, linked alerts, linked customers."""
     tenant_id = _require_tenant(user)
     case = await case_service.get(db, case_id=case_id, tenant_id=tenant_id)
-    count = case_service._linked_alerts_count(case)
+    count = await case_service._linked_alerts_count(db, case)
     return _case_to_response(case, count)
 
 
@@ -129,7 +129,8 @@ async def patch_case(
         assigned_to=assigned_to,
         user_role=user.role,
     )
-    count = case_service._linked_alerts_count(case)
+    count = await case_service._linked_alerts_count(db, case)
+    await db.refresh(case)
     return _case_to_response(case, count)
 
 
@@ -160,7 +161,7 @@ async def reopen_case(
     reason = (body or {}).get("reason", "Reopened by MLRO")
     note = await case_service.add_note(db, case_id=case_id, tenant_id=tenant_id, user_id=user.id, content=f"[CASE REOPENED] {reason}")
 
-    count = case_service._linked_alerts_count(case)
+    count = await case_service._linked_alerts_count(db, case)
     return _case_to_response(case, count)
 
 

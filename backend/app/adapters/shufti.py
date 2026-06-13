@@ -5,6 +5,7 @@ Docs: https://developers.shuftipro.com/docs/user_identification_authentication/e
 """
 
 import hashlib
+import hmac as hmac_module
 import logging
 import base64
 from dataclasses import dataclass
@@ -37,7 +38,7 @@ def _verify_signature(raw_body: str, signature_header: str | None, secret_key: s
         secret_hash = hashlib.sha256(secret_key.encode()).hexdigest()
         concatenated = raw_body + secret_hash
         expected = hashlib.sha256(concatenated.encode()).hexdigest()
-        return expected == signature_header
+        return hmac_module.compare_digest(expected, signature_header)
     except Exception:
         return False
 

@@ -437,7 +437,118 @@ class AnalyticsService:
         # Cache -- severe not cached
         await set_cached_score(tenant_id, chain_enum.value, address_lower, data, score)
 
+        # Fire webhook for high-risk wallets
+        if score >= 70:
+            try:
+                from app.core.webhooks import get_tenant_webhook_url
+                webhook_url = await get_tenant_webhook_url(db, tenant_id)
+                if webhook_url:
+                    from app.workers.tasks.webhooks import deliver_webhook_task
+                    deliver_webhook_task.delay(
+                        webhook_url,
+                        "wallet.high_risk",
+                        {
+                            "wallet_id": str(wallet.id),
+                            "address": wallet.address,
+                            "chain": wallet.chain.value,
+                            "risk_score": score,
+                            "risk_category": category.value,
+                            "tenant_id": str(tenant_id),
+                        },
+                    )
+            except Exception:
+                logger.warning("Failed to dispatch wallet.high_risk webhook", exc_info=True)
+
+        # Auto-freeze check if wallet is linked to a customer
+        if wallet.customer_id:
+            try:
+                from app.models.tenant import Tenant
+                tenant_result = await db.execute(
+                    select(Tenant).where(Tenant.id == tenant_id)
+                )
+                tenant = tenant_result.scalar_one_or_none()
+                if tenant:
+                    from app.core.auto_freeze import check_auto_freeze
+                    await check_auto_freeze(
+                        tenant,
+                        wallet.customer_id,
+                        "wallet_risk",
+                        score,
+                        db,
+                        source_id=wallet.id,
+                    )
+            except Exception:
+                logger.warning("Auto-freeze check failed for wallet %s", wallet.id, exc_info=True)
+
         return data
+
+    async def register_wallet(
+        self,
+        db: AsyncSession,
+        tenant_id: UUID,
+        address: str,
+        chain: str = "ethereum",
+        tenant_flags: dict | None = None,
+        customer_id: str | None = None,
+        external_ref: str | None = None,
+        label: str | None = None,
+    ) -> dict:
+        """Register a wallet for ongoing monitoring. Does initial scoring."""
+        chain_enum = self._parse_chain(chain)
+        address_lower = address.lower().strip()
+
+        # Find or create the wallet
+        result = await db.execute(
+            select(Wallet).where(
+                Wallet.tenant_id == tenant_id,
+                Wallet.address == address_lower,
+                Wallet.chain == chain_enum,
+            )
+        )
+        wallet = result.scalar_one_or_none()
+        if not wallet:
+            wallet = Wallet(
+                tenant_id=tenant_id,
+                address=address_lower,
+                chain=chain_enum,
+            )
+            db.add(wallet)
+
+        # Set monitoring fields
+        wallet.monitoring_enabled = True
+        if customer_id:
+            import uuid as _uuid
+            try:
+                wallet.customer_id = _uuid.UUID(customer_id)
+            except (ValueError, AttributeError):
+                pass
+        if external_ref is not None:
+            wallet.external_ref = external_ref
+        if label is not None:
+            wallet.label = label
+        await db.flush()
+
+        # Do initial scoring
+        score_data = await self.score_wallet(
+            db,
+            tenant_id=tenant_id,
+            address=address_lower,
+            chain=chain,
+            tenant_flags=tenant_flags,
+        )
+
+        return {
+            "walletId": score_data["walletId"],
+            "address": score_data["address"],
+            "chain": score_data["chain"],
+            "monitoringEnabled": True,
+            "riskScore": score_data["riskScore"],
+            "riskCategory": score_data["riskCategory"],
+            "confidenceLevel": score_data["confidenceLevel"],
+            "resolutionLayer": score_data["resolutionLayer"],
+            "label": label,
+            "externalRef": external_ref,
+        }
 
     async def list_wallets(
         self,

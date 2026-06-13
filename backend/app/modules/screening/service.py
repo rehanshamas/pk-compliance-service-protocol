@@ -239,6 +239,44 @@ class ScreeningService:
                 except Exception:
                     pass  # Non-fatal: alert creation must not block disposition
 
+        # Auto-freeze check on sanctions true_positive
+        if disp_status == DispositionStatus.true_positive and sr.matches:
+            top_match = sr.matches[0] if sr.matches else {}
+            source = (top_match.get("source") or "").lower()
+            match_score = top_match.get("score", 0) or 0
+            sanctions_sources = ("un", "ofac", "eu", "nacta", "opensanctions")
+            # Find customer linked to screening (by entity name in same tenant)
+            try:
+                from app.modules.identity.models import Customer as CustModel
+                cust_result = await db.execute(
+                    select(CustModel).where(
+                        CustModel.tenant_id == tenant_id,
+                        CustModel.full_name == sr.screened_entity_name,
+                    ).limit(1)
+                )
+                linked_customer = cust_result.scalar_one_or_none()
+                if linked_customer:
+                    from app.models.tenant import Tenant as TenantModel
+                    tenant_result = await db.execute(
+                        select(TenantModel).where(TenantModel.id == tenant_id)
+                    )
+                    tenant_obj = tenant_result.scalar_one_or_none()
+                    if tenant_obj:
+                        from app.core.auto_freeze import check_auto_freeze
+                        trigger = "sanctions_true_positive" if source in sanctions_sources else "screening_match"
+                        await check_auto_freeze(
+                            tenant_obj,
+                            linked_customer.id,
+                            trigger,
+                            match_score,
+                            db,
+                            source_id=sr.id,
+                            matched_name=sr.screened_entity_name,
+                            matched_list=source.upper() if source in sanctions_sources else None,
+                        )
+            except Exception:
+                pass  # Non-fatal
+
         return md
 
     async def get_ingestion_health(self, db: AsyncSession) -> list[IngestionHealth]:

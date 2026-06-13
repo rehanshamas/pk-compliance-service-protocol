@@ -66,6 +66,7 @@ class CustomerService:
             dob=dob_date,
             nationality=nationality,
             cnic_number=cnic_number,
+            phone=kwargs.get("phone"),
             business_purpose=kwargs.get("business_purpose"),
             expected_activity=kwargs.get("expected_activity"),
         )

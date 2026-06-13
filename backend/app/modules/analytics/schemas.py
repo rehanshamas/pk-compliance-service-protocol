@@ -62,3 +62,28 @@ class WalletDetailResponse(BaseModel):
     resolutionLayer: str
     lastScoredAt: str | None
     scoreHistory: list[dict]
+
+
+class WalletRegisterRequest(BaseModel):
+    """POST /wallets/register — register a wallet for ongoing monitoring."""
+
+    address: str = Field(..., min_length=10, max_length=128)
+    chain: str = Field("ethereum", description="ethereum|bitcoin|bsc|polygon|tron")
+    customer_id: str | None = Field(None, description="Link to a CIP customer ID")
+    external_ref: str | None = Field(None, max_length=255, description="VASP's external reference")
+    label: str | None = Field(None, max_length=100, description="Human-readable label")
+
+
+class WalletRegisterResponse(BaseModel):
+    """Response after registering a wallet for monitoring."""
+
+    walletId: str
+    address: str
+    chain: str
+    monitoringEnabled: bool
+    riskScore: int
+    riskCategory: str
+    confidenceLevel: str
+    resolutionLayer: str
+    label: str | None = None
+    externalRef: str | None = None

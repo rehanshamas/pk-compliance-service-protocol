@@ -74,12 +74,12 @@ async def test_refresh_token():
             "/api/v1/auth/login",
             json={"email": "mlro@vasp.pk", "password": "demo123"},
         )
-    if login.status_code != 200:
-        pytest.skip("Run make seed")
-    refresh_token = login.json()["refresh_token"]
-    resp = await client.post(
-        "/api/v1/auth/refresh",
-        json={"refresh_token": refresh_token},
-    )
+        if login.status_code != 200:
+            pytest.skip("Run make seed")
+        refresh_token = login.json()["refresh_token"]
+        resp = await client.post(
+            "/api/v1/auth/refresh",
+            json={"refresh_token": refresh_token},
+        )
     assert resp.status_code == 200
     assert "access_token" in resp.json()

@@ -35,6 +35,7 @@ from app.modules.webhooks.shufti_router import router as shufti_webhook_router
 from app.modules.billing.router import router as billing_router
 from app.modules.admin.applications_router import router as applications_router
 from app.modules.incidents.router import router as incidents_router
+from app.modules.identity.session_router import router as kyc_sessions_router
 
 
 @asynccontextmanager
@@ -99,6 +100,7 @@ def create_app() -> FastAPI:
     app.include_router(billing_router, prefix="/api/v1/billing", tags=["billing"])
     app.include_router(applications_router, prefix="/api/v1/applications", tags=["applications"])
     app.include_router(incidents_router, prefix="/api/v1/incidents", tags=["incidents"])
+    app.include_router(kyc_sessions_router, prefix="/api/v1/kyc-sessions", tags=["kyc-sessions"])
 
     # Authenticated OpenAPI schema — filtered to tenant-facing endpoints only
     # Used by frontend API Explorer (no admin/internal routes exposed)

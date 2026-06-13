@@ -2,6 +2,9 @@
 
 import os
 
+# Set test environment before importing app
+os.environ["ENVIRONMENT"] = "test"
+
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -11,22 +14,17 @@ from httpx import ASGITransport, AsyncClient
 SKIP_INTEGRATION = os.environ.get("CIP_SKIP_INTEGRATION", "").lower() in ("1", "true", "yes")
 
 
-@pytest.fixture(autouse=True)
-def _reset_db_engine():
-    """Reset the SQLAlchemy async engine after each test to avoid event loop conflicts.
+@pytest_asyncio.fixture(loop_scope="module", autouse=True)
+async def _dispose_engine_per_module():
+    """Dispose engine connections at end of each test module.
 
-    asyncpg connections are bound to the event loop they were created on. When pytest-asyncio
-    creates a new loop per test, stale connections from the previous loop cause
-    'RuntimeError: Event loop is closed'. Disposing the engine forces fresh connections.
+    asyncpg connections are bound to the event loop. With module-scoped loops,
+    we dispose at the end of each module to prevent stale connections.
     """
     yield
     try:
         from app.database import engine
-        import asyncio
-
-        loop = asyncio.new_event_loop()
-        loop.run_until_complete(engine.dispose())
-        loop.close()
+        await engine.dispose()
     except Exception:
         pass
 

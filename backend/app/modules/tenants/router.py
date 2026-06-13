@@ -206,6 +206,101 @@ async def update_analytics_settings(
     return {"status": "success", "data": flags}
 
 
+@router.patch("/me/settings/auto-freeze")
+async def update_auto_freeze_settings(
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    """Update tenant auto-freeze configuration."""
+    from app.core.exceptions import AuthorizationError
+    if user.role.value not in ("mlro", "compliance_officer"):
+        raise AuthorizationError("Only MLRO or Compliance Officer can configure auto-freeze")
+    tenant = _get_tenant_or_raise(user)
+    flags = dict(tenant.feature_flags or {})
+    auto_freeze = flags.get("auto_freeze", {})
+    if "enabled" in body:
+        auto_freeze["enabled"] = bool(body["enabled"])
+    if "vasp_freeze_endpoint" in body:
+        auto_freeze["vasp_freeze_endpoint"] = body["vasp_freeze_endpoint"]
+    if "vasp_freeze_auth_token" in body:
+        auto_freeze["vasp_freeze_auth_token"] = body["vasp_freeze_auth_token"]
+    if "thresholds" in body and isinstance(body["thresholds"], dict):
+        thresholds = auto_freeze.get("thresholds", {})
+        t = body["thresholds"]
+        if "wallet_risk_score_min" in t:
+            thresholds["wallet_risk_score_min"] = int(t["wallet_risk_score_min"])
+        if "screening_match_score_min" in t:
+            thresholds["screening_match_score_min"] = int(t["screening_match_score_min"])
+        if "sanctions_true_positive" in t:
+            thresholds["sanctions_true_positive"] = bool(t["sanctions_true_positive"])
+        auto_freeze["thresholds"] = thresholds
+    flags["auto_freeze"] = auto_freeze
+    tenant.feature_flags = flags
+    return {"status": "success", "data": {"auto_freeze": auto_freeze}}
+
+
+@router.post("/me/settings/auto-freeze/test")
+async def test_auto_freeze_endpoint(
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    """Send a test request to the configured VASP freeze endpoint."""
+    tenant = _get_tenant_or_raise(user)
+    config = (tenant.feature_flags or {}).get("auto_freeze", {})
+    endpoint = config.get("vasp_freeze_endpoint")
+    if not endpoint or not endpoint.strip():
+        raise ValidationError("No VASP freeze endpoint configured.")
+    auth_token = config.get("vasp_freeze_auth_token")
+
+    import httpx
+    headers = {"Content-Type": "application/json"}
+    if auth_token:
+        headers["Authorization"] = auth_token
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(
+                endpoint.strip(),
+                json={
+                    "event": "compliance.freeze_test",
+                    "message": "CIP auto-freeze test ping",
+                    "tenant_id": str(tenant.id),
+                },
+                headers=headers,
+            )
+            return {
+                "status": "success",
+                "data": {
+                    "delivered": 200 <= resp.status_code < 300,
+                    "statusCode": resp.status_code,
+                },
+            }
+    except Exception as e:
+        return {
+            "status": "success",
+            "data": {
+                "delivered": False,
+                "statusCode": None,
+                "error": str(e),
+            },
+        }
+
+
+@router.patch("/me/settings/kyc")
+async def update_kyc_settings(
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    """Update tenant KYC settings (liveness toggle)."""
+    tenant = _get_tenant_or_raise(user)
+    flags = dict(tenant.feature_flags or {})
+    if "liveness_required" in body:
+        flags["liveness_required"] = bool(body["liveness_required"])
+    tenant.feature_flags = flags
+    return {"status": "success", "data": {"liveness_required": flags.get("liveness_required", False)}}
+
+
 # --------------- Team / User management ---------------
 
 

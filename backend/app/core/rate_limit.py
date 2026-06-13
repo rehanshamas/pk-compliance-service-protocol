@@ -49,6 +49,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return self._redis
 
     async def dispatch(self, request: Request, call_next):
+        # Skip rate limiting in test environment
+        if settings.environment == "test":
+            return await call_next(request)
+
         path = request.url.path
         if any(path.startswith(p) for p in SKIP_PREFIXES):
             return await call_next(request)

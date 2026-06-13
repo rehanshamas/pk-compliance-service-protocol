@@ -75,6 +75,7 @@ class Customer(Base):
     dob: Mapped[date | None] = mapped_column(Date, nullable=True)
     nationality: Mapped[str | None] = mapped_column(String(100), nullable=True)
     cnic_number: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
+    phone: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
     business_purpose: Mapped[str | None] = mapped_column(String(512), nullable=True)  # Reg. 9.2(c): nature and purpose of business relationship
     expected_activity: Mapped[str | None] = mapped_column(String(512), nullable=True)  # Expected transaction profile
     risk_tier: Mapped[RiskTier] = mapped_column(
@@ -245,6 +246,71 @@ class FreezeRecord(Base):
     )
 
     customer: Mapped["Customer"] = relationship("Customer", foreign_keys=[customer_id])
+
+
+class SessionStatus(str, enum.Enum):
+    pending = "pending"
+    in_progress = "in_progress"
+    completed = "completed"
+    expired = "expired"
+    failed = "failed"
+
+
+class SessionStep(str, enum.Enum):
+    upload = "upload"
+    verify = "verify"
+    liveness = "liveness"
+    complete = "complete"
+
+
+class KycSession(Base):
+    """Hosted KYC session. VASP creates via API, user completes via hosted page."""
+
+    __tablename__ = "kyc_sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False, index=True
+    )
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("customers.id"), nullable=True
+    )
+
+    # VASP provides these
+    external_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    customer_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    customer_cnic: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    customer_phone: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    customer_dob: Mapped[date | None] = mapped_column(Date, nullable=True)
+    customer_nationality: Mapped[str | None] = mapped_column(String(100), nullable=True)
+
+    # Callbacks
+    web_callback_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    mobile_callback_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+
+    # State
+    status: Mapped[SessionStatus] = mapped_column(
+        Enum(SessionStatus, name="kyc_session_status_enum"), nullable=False, default=SessionStatus.pending
+    )
+    current_step: Mapped[SessionStep] = mapped_column(
+        Enum(SessionStep, name="kyc_session_step_enum"), nullable=False, default=SessionStep.upload
+    )
+    liveness_required: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Results
+    kyc_status: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    risk_tier: Mapped[str | None] = mapped_column(String(20), nullable=True)
+
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    customer: Mapped["Customer | None"] = relationship("Customer", foreign_keys=[customer_id])
 
 
 class BeneficialOwner(Base):

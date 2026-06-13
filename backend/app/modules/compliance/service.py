@@ -232,11 +232,22 @@ class CaseService:
         await db.flush()
         return case
 
-    def _linked_alerts_count(self, case: Case) -> int:
+    async def _linked_alerts_count(self, db: AsyncSession, case: Case) -> int:
         """Count unique alerts: source_alert_id + alert_links (no double count)."""
-        count = len(case.alert_links)
+        from sqlalchemy import select, func
+        result = await db.execute(
+            select(func.count()).select_from(CaseAlertLink).where(CaseAlertLink.case_id == case.id)
+        )
+        count = result.scalar() or 0
         if case.source_alert_id:
-            if not any(l.alert_id == case.source_alert_id for l in case.alert_links):
+            # Check if source_alert is already in links
+            result2 = await db.execute(
+                select(func.count()).select_from(CaseAlertLink).where(
+                    CaseAlertLink.case_id == case.id,
+                    CaseAlertLink.alert_id == case.source_alert_id,
+                )
+            )
+            if (result2.scalar() or 0) == 0:
                 count += 1
         return count
 

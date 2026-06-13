@@ -98,6 +98,9 @@ class Settings(BaseSettings):
     smtp_password: str = ""
     notification_from_email: str = "noreply@cip.example.com"
 
+    # Hosted KYC page
+    cip_frontend_url: str = "http://localhost:3000"  # Base URL for hosted KYC verify page
+
     # Rate limiting
     rate_limit_per_minute: int = 1000  # per tenant (authenticated)
     rate_limit_unauth_per_minute: int = 60  # per IP (unauthenticated)

@@ -104,6 +104,25 @@ def run_ongoing_monitoring(self: Any) -> dict[str, Any]:
 
                 if matches_data:
                     create_alert_for_screening_sync(db, tenant.id, sr)
+                    # Fire webhook: screening.ongoing_match
+                    if tenant.webhook_url:
+                        try:
+                            from app.core.webhooks import deliver_webhook_sync
+                            deliver_webhook_sync(
+                                tenant.webhook_url,
+                                "screening.ongoing_match",
+                                {
+                                    "screening_result_id": str(sr.id),
+                                    "tenant_id": str(tenant.id),
+                                    "screened_entity_name": name,
+                                    "match_count": len(matches_data),
+                                    "overall_status": overall.value,
+                                    "matches": matches_data,
+                                },
+                                api_key_hash=tenant.api_key_hash,
+                            )
+                        except Exception:
+                            pass  # Non-fatal
 
                 total_screened += 1
 

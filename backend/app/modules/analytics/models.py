@@ -4,7 +4,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -51,6 +51,12 @@ class Wallet(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     last_scored_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    monitoring_enabled: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("customers.id", ondelete="SET NULL"), nullable=True
+    )
+    external_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    label: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     risk_scores: Mapped[list["WalletRiskScore"]] = relationship(
         "WalletRiskScore",
